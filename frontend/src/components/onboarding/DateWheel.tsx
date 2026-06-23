@@ -3,7 +3,7 @@
  * Implemented via three ScrollViews with snap and a centered selection band,
  * mirroring the web Wheel.tsx behavior but with native ScrollView snapping.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/src/theme/colors";
@@ -117,6 +117,17 @@ export function DateWheel({
   const { day, month, year } = parse(value);
   const days = Array.from({ length: daysIn(month, year) }, (_, i) => i + 1);
   const yearIdx = YEARS.indexOf(year);
+  const [hasInitialized, setHasInitialized] = useState(!!value);
+
+  // When mounted with no value, commit the visible defaults so the rest of the
+  // form sees a real DOB and "Continue" enables without forcing the user to
+  // spin the wheels.
+  useEffect(() => {
+    if (!hasInitialized && !value) {
+      onChange(format(day, month, year));
+      setHasInitialized(true);
+    }
+  }, [hasInitialized, value, day, month, year, onChange]);
 
   const setPart = (part: "d" | "m" | "y", v: number) => {
     let nd = day, nm = month, ny = year;

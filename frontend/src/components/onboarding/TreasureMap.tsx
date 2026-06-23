@@ -54,7 +54,7 @@ export function TreasureMap({
 
   // Map node position to overlay position (percent of 320x200).
   // We render at fixed width; compute overlay using actual rendered width below.
-  const mapWidth = 340;
+  const mapWidth = 300;
   const mapHeight = (mapWidth / VIEW_W) * VIEW_H;
 
   return (
