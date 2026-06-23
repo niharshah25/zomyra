@@ -124,13 +124,13 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     marginTop: 12,
-    height: 3,
+    height: 5,
     borderRadius: 999,
     backgroundColor: colors.secondary,
     overflow: "hidden",
   },
   progressBar: {
-    height: 3,
+    height: 5,
     backgroundColor: colors.primary,
     borderRadius: 999,
   },

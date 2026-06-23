@@ -24,12 +24,22 @@ function Wheel({
 }) {
   const ref = useRef<ScrollView>(null);
   const lastEmitted = useRef(selectedIndex);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (selectedIndex === lastEmitted.current) return;
     ref.current?.scrollTo({ y: selectedIndex * ITEM_H, animated: true });
     lastEmitted.current = selectedIndex;
   }, [selectedIndex]);
+
+  const commit = (y: number) => {
+    const i = Math.round(y / ITEM_H);
+    const clamped = Math.max(0, Math.min(values.length - 1, i));
+    if (clamped !== lastEmitted.current) {
+      lastEmitted.current = clamped;
+      onChange(clamped);
+    }
+  };
 
   return (
     <View style={[styles.wheelWrap, { width, height: ITEM_H * VISIBLE }]}>
@@ -39,15 +49,15 @@ function Wheel({
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_H}
         decelerationRate="fast"
+        scrollEventThrottle={16}
         contentOffset={{ x: 0, y: selectedIndex * ITEM_H }}
-        onMomentumScrollEnd={(e) => {
+        onMomentumScrollEnd={(e) => commit(e.nativeEvent.contentOffset.y)}
+        onScrollEndDrag={(e) => commit(e.nativeEvent.contentOffset.y)}
+        onScroll={(e) => {
+          // Debounced commit — covers web where momentum events don't fire.
           const y = e.nativeEvent.contentOffset.y;
-          const i = Math.round(y / ITEM_H);
-          const clamped = Math.max(0, Math.min(values.length - 1, i));
-          if (clamped !== lastEmitted.current) {
-            lastEmitted.current = clamped;
-            onChange(clamped);
-          }
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => commit(y), 120);
         }}
       >
         <View style={{ height: ITEM_H * Math.floor(VISIBLE / 2) }} />

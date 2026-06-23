@@ -149,6 +149,8 @@ export default function OtpScreen() {
                 onKeyPress={(e) => onKeyPress(i, e.nativeEvent.key)}
                 keyboardType="number-pad"
                 textContentType="oneTimeCode"
+                autoComplete="one-time-code"
+                autoCorrect={false}
                 maxLength={1}
                 style={styles.box}
               />

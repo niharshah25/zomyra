@@ -65,6 +65,9 @@ export default function PhoneScreen() {
               keyboardType="number-pad"
               placeholder="Enter mobile number"
               placeholderTextColor={colors.mutedForeground}
+              autoComplete="off"
+              autoCorrect={false}
+              textContentType="telephoneNumber"
               style={[styles.input, showError && { borderColor: colors.destructive }]}
             />
           </View>
