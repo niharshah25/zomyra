@@ -6,9 +6,10 @@
 import { GripVertical, ImagePlus, Star, Trash2 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ConfirmDialog } from "@/src/components/ui/ConfirmDialog";
+import { toast } from "@/src/components/ui/Toast";
 import { MAX_PHOTOS, type UploadedPhoto } from "@/src/lib/verification/types";
 import { uploadService } from "@/src/services/upload";
 import { colors, radii } from "@/src/theme/colors";
@@ -24,7 +25,17 @@ export function PhotoUploadGrid({ photos, onChange }: Props) {
   const pick = async () => {
     if (photos.length >= MAX_PHOTOS) return;
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
+    if (!perm.granted) {
+      // Per <handle_permissions_contract>: never dead-end the user. Either
+      // re-prompt (if still possible) or guide them to settings.
+      if (perm.canAskAgain) {
+        toast.show("We need photo access to upload your pictures.");
+      } else {
+        toast.show("Photo access blocked. Opening Settings…");
+        setTimeout(() => Linking.openSettings(), 600);
+      }
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
@@ -128,7 +139,7 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
   },
   cell: {
     width: "31.5%",
