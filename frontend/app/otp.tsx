@@ -208,9 +208,13 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     color: colors.mutedForeground,
   },
-  row: { marginTop: 24, flexDirection: "row", justifyContent: "space-between", gap: 6 },
+  row: { marginTop: 24, flexDirection: "row", gap: 8, alignItems: "stretch" },
   box: {
-    flex: 1,
+    width: 44,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: 0,
     height: 56,
     borderRadius: radii.lg,
     borderWidth: 1,
@@ -220,6 +224,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     color: colors.foreground,
+    paddingHorizontal: 0,
   },
   resendRow: { marginTop: 16, flexDirection: "row", justifyContent: "center", alignItems: "center" },
   cta: {

@@ -10,9 +10,9 @@ import { colors, radii } from "@/src/theme/colors";
 export default function Login() {
   const router = useRouter();
   return (
-    <SafeAreaView style={styles.root} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.root} edges={["top", "left", "right", "bottom"]}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 28 }}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
@@ -32,7 +32,7 @@ export default function Login() {
           />
         </View>
 
-        <View style={{ gap: 12, marginTop: 12 }}>
+        <View style={{ gap: 12 }}>
           <Pressable
             testID="login-continue-phone"
             onPress={() => router.push("/phone")}
@@ -63,10 +63,10 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  hero: { alignItems: "center", marginTop: 24 },
+  hero: { alignItems: "center", marginTop: 16 },
   logoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   title: {
-    marginTop: 22,
+    marginTop: 18,
     fontSize: 26,
     lineHeight: 31,
     fontWeight: "800",
@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     textAlign: "center",
   },
-  illustrationWrap: { flex: 1, alignItems: "center", justifyContent: "center", marginVertical: 16 },
-  illustration: { width: "100%", maxWidth: 320, aspectRatio: 1024 / 768 },
+  illustrationWrap: { alignItems: "center", justifyContent: "center", marginVertical: 12 },
+  illustration: { width: 260, height: 196 },
   primaryBtn: {
     height: 56,
     borderRadius: radii.lg,
