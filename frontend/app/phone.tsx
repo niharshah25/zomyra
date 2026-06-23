@@ -75,7 +75,13 @@ export default function PhoneScreen() {
             </Text>
           ) : null}
 
-          <View style={{ flex: 1 }} />
+          <Text style={styles.hint}>
+            We'll text a 6-digit code to{" "}
+            <Text style={styles.hintStrong}>
+              {country.flag} {country.name} ({country.dial})
+            </Text>
+            .
+          </Text>
 
           <Pressable
             testID="phone-send-otp"
@@ -90,6 +96,9 @@ export default function PhoneScreen() {
             {sending ? <ActivityIndicator color={colors.primaryForeground} /> : null}
             <Text style={styles.ctaText}>{sending ? "Sending OTP…" : "Send OTP"}</Text>
           </Pressable>
+
+          <View style={{ flex: 1 }} />
+
           <Text style={styles.legal}>We'll never share your phone number with other users.</Text>
         </View>
       </KeyboardAvoidingView>
@@ -130,7 +139,18 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.destructive,
   },
+  hint: {
+    marginTop: 14,
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.mutedForeground,
+  },
+  hintStrong: {
+    color: colors.foreground,
+    fontWeight: "700",
+  },
   cta: {
+    marginTop: 18,
     height: 52,
     borderRadius: radii.lg,
     backgroundColor: colors.primary,
@@ -138,7 +158,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    marginBottom: 12,
   },
   ctaDisabled: { backgroundColor: "#D6CFE0" },
   ctaText: {
