@@ -139,10 +139,11 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    justifyContent: "space-between",
+    rowGap: 10,
   },
   cell: {
-    width: "31.5%",
+    width: "32%",
     aspectRatio: 3 / 4,
   },
   tile: {

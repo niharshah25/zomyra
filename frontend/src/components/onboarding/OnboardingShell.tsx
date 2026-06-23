@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react-native";
-import type { ReactNode } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, type ReactNode } from "react";
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, radii } from "@/src/theme/colors";
@@ -16,6 +16,11 @@ type Props = {
   nextLabel?: string;
   loading?: boolean;
   hideStepLabel?: boolean;
+  /**
+   * A stable key per question. When this changes, the body fades+slides in.
+   * Defaults to the step index.
+   */
+  transitionKey?: string | number;
   children: ReactNode;
 };
 
@@ -30,10 +35,32 @@ export function OnboardingShell({
   nextLabel = "Continue",
   loading,
   hideStepLabel,
+  transitionKey,
   children,
 }: Props) {
   const insets = useSafeAreaInsets();
   const pct = Math.min(100, Math.round(((step + 1) / total) * 100));
+
+  // Cross-question transition: fade + slight slide-from-right each time
+  // `transitionKey` (or `step`) changes.
+  const opacity = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const animKey = transitionKey ?? step;
+  const firstRender = useRef(true);
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    opacity.setValue(0);
+    translateX.setValue(16);
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 240, useNativeDriver: true }),
+      Animated.timing(translateX, { toValue: 0, duration: 240, useNativeDriver: true }),
+    ]).start();
+  }, [animKey, opacity, translateX]);
+
   return (
     <SafeAreaView style={styles.root} edges={["top", "left", "right"]}>
       <View style={styles.header}>
@@ -61,15 +88,20 @@ export function OnboardingShell({
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20, paddingTop: 16 }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ alignItems: "center" }}>
+        <Animated.View
+          style={[
+            styles.questionWrap,
+            { opacity, transform: [{ translateX }] },
+          ]}
+        >
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-          <View style={{ marginTop: 24, width: "100%" }}>{children}</View>
-        </View>
+          <View style={styles.bodyWrap}>{children}</View>
+        </Animated.View>
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
@@ -134,6 +166,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 999,
   },
+  // Question container is centered vertically and horizontally.
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    justifyContent: "center",
+  },
+  questionWrap: {
+    alignItems: "center",
+    width: "100%",
+  },
   title: {
     fontSize: 24,
     fontWeight: "700",
@@ -148,6 +191,10 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: colors.mutedForeground,
     textAlign: "center",
+  },
+  bodyWrap: {
+    marginTop: 28,
+    width: "100%",
   },
   footer: {
     paddingHorizontal: 20,

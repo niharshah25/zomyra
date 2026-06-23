@@ -31,7 +31,7 @@ export function ScaleSlider({ value, onChange, left, right }: Props) {
         <Text style={[styles.labelText, { textAlign: "left" }]}>{left}</Text>
         <Text style={[styles.labelText, { textAlign: "right" }]}>{right}</Text>
       </View>
-      <Text style={styles.valueText}>{value} / 5</Text>
+      <Text style={styles.valueText}>Tap or drag to choose</Text>
     </View>
   );
 }

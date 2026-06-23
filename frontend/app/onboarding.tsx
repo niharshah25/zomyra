@@ -117,7 +117,14 @@ const Q1: QuestionScreen[] = [
               key={g}
               title={g}
               selected={s.gender === g}
-              onSelect={() => set("gender", g)}
+              onSelect={() => {
+                set("gender", g);
+                // Auto-default partner gender to the conventional opposite.
+                // The user can still change it later in their preferences.
+                if (g === "Female") set("prefGender", "Male");
+                else if (g === "Male") set("prefGender", "Female");
+                else if (!s.prefGender) set("prefGender", g);
+              }}
               compact
             />
           ))}
@@ -318,26 +325,6 @@ const Q1: QuestionScreen[] = [
   {
     kind: "q", section: 1,
     render: (s, set) => ({
-      title: "Who are you looking for?",
-      canNext: !!s.prefGender,
-      body: (
-        <View style={{ gap: 8 }}>
-          {(["Female", "Male", "Non-binary", "Prefer not to say"] as const).map((g) => (
-            <OptionCard
-              key={g}
-              title={g}
-              selected={s.prefGender === g}
-              onSelect={() => set("prefGender", g)}
-              compact
-            />
-          ))}
-        </View>
-      ),
-    }),
-  },
-  {
-    kind: "q", section: 1,
-    render: (s, set) => ({
       title: "Preferred age range?",
       canNext: true,
       body: (
@@ -455,6 +442,7 @@ export default function OnboardingScreen() {
       canNext={r.canNext}
       nextLabel={isLast ? "Finish" : "Continue"}
       hideStepLabel
+      transitionKey={idx}
     >
       {r.body}
     </OnboardingShell>

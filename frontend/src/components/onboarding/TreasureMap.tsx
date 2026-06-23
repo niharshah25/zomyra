@@ -1,11 +1,11 @@
 /**
- * Treasure-map intro screen for onboarding sections. RN-simplified
- * implementation — the original used hand-drawn SVG squiggles; we keep the
- * same 3-node stepper aesthetic with react-native-svg.
+ * Treasure-map intro screen for onboarding sections. RN port of the original
+ * web TreasureMap.tsx — preserves the 3-node "Plot → Anchor → Love" journey
+ * and animates the path filling in whenever the user advances a section.
  */
 import { ArrowLeft, ArrowRight, Anchor, Compass, Heart } from "lucide-react-native";
-import type { ComponentType } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, type ComponentType } from "react";
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 
@@ -34,6 +34,13 @@ const NODES: NodeMeta[] = [
 const VIEW_W = 320;
 const VIEW_H = 200;
 
+// Approximate lengths of each segment for the stroke-dasharray trick.
+// Slightly over-estimating ensures the dashed line fully reveals.
+const SEG1_LENGTH = 220;
+const SEG2_LENGTH = 220;
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+
 function buildPath() {
   const [a, b, c] = NODES;
   const seg1 = `M ${a.x} ${a.y} C ${a.x + 20} ${a.y + 30}, ${b.x - 90} ${b.y + 80}, ${b.x - 30} ${b.y + 20} S ${b.x - 20} ${b.y - 40}, ${b.x} ${b.y}`;
@@ -52,8 +59,55 @@ export function TreasureMap({
 }) {
   const { seg1, seg2, full } = buildPath();
 
-  // Map node position to overlay position (percent of 320x200).
-  // We render at fixed width; compute overlay using actual rendered width below.
+  // Each segment uses its own animated offset (drawn length).
+  const drawSeg1 = useRef(new Animated.Value(SEG1_LENGTH)).current;
+  const drawSeg2 = useRef(new Animated.Value(SEG2_LENGTH)).current;
+  const activeNodeScale = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    // Reset state.
+    drawSeg1.setValue(info.step >= 2 ? SEG1_LENGTH : SEG1_LENGTH);
+    drawSeg2.setValue(info.step >= 3 ? SEG2_LENGTH : SEG2_LENGTH);
+    activeNodeScale.setValue(0.7);
+
+    const sequence: Animated.CompositeAnimation[] = [];
+
+    // Animate the *newly unlocked* segment for this section.
+    if (info.step >= 2) {
+      sequence.push(
+        Animated.timing(drawSeg1, {
+          toValue: 0,
+          duration: 900,
+          delay: 250,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false, // SVG path props can't run on native driver
+        }),
+      );
+    }
+    if (info.step >= 3) {
+      sequence.push(
+        Animated.timing(drawSeg2, {
+          toValue: 0,
+          duration: 900,
+          delay: info.step === 3 ? 250 : 0,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      );
+    }
+
+    Animated.parallel([
+      Animated.sequence(sequence),
+      Animated.spring(activeNodeScale, {
+        toValue: 1,
+        delay: 600,
+        useNativeDriver: false,
+        bounciness: 12,
+      }),
+    ]).start();
+  }, [info.step, drawSeg1, drawSeg2, activeNodeScale]);
+
+  // Map the viewBox-coordinate nodes to overlay pixels.
   const mapWidth = 300;
   const mapHeight = (mapWidth / VIEW_W) * VIEW_H;
 
@@ -78,6 +132,7 @@ export function TreasureMap({
             height={mapHeight}
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
           >
+            {/* Faint dotted route is always present */}
             <Path
               d={full}
               fill="none"
@@ -86,11 +141,28 @@ export function TreasureMap({
               strokeDasharray="2 14"
               strokeLinecap="round"
             />
+            {/* Seg1 is revealed by animating dashoffset from full length to 0 */}
             {info.step >= 2 ? (
-              <Path d={seg1} fill="none" stroke={colors.primary} strokeWidth={2.5} strokeLinecap="round" />
+              <AnimatedPath
+                d={seg1}
+                fill="none"
+                stroke={colors.primary}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeDasharray={`${SEG1_LENGTH} ${SEG1_LENGTH}`}
+                strokeDashoffset={drawSeg1}
+              />
             ) : null}
             {info.step >= 3 ? (
-              <Path d={seg2} fill="none" stroke={colors.primary} strokeWidth={2.5} strokeLinecap="round" />
+              <AnimatedPath
+                d={seg2}
+                fill="none"
+                stroke={colors.primary}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeDasharray={`${SEG2_LENGTH} ${SEG2_LENGTH}`}
+                strokeDashoffset={drawSeg2}
+              />
             ) : null}
           </Svg>
           {NODES.map((n, i) => {
@@ -101,12 +173,13 @@ export function TreasureMap({
             const top = (n.y / VIEW_H) * mapHeight - 20;
             return (
               <View key={n.label} style={[styles.nodeWrap, { left, top }]}>
-                <View
+                <Animated.View
                   style={[
                     styles.nodeDot,
                     state === "active" && {
                       backgroundColor: colors.primary,
                       borderColor: colors.primary,
+                      transform: [{ scale: activeNodeScale }],
                     },
                     state === "done" && {
                       backgroundColor: "rgba(91,44,111,0.15)",
@@ -123,7 +196,7 @@ export function TreasureMap({
                     color={state === "active" ? "#fff" : state === "done" ? colors.primary : "rgba(31,18,53,0.4)"}
                     strokeWidth={2.2}
                   />
-                </View>
+                </Animated.View>
                 <Text
                   style={[
                     styles.nodeLabel,

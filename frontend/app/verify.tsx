@@ -89,8 +89,6 @@ export default function VerifyScreen() {
         </View>
         <View style={{ marginTop: 24, gap: 8 }}>
           {[
-            "Verified badge on your profile",
-            "Increased trust with matches",
             "Better visibility in search",
             "A safer community for everyone",
           ].map((t) => (

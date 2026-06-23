@@ -1,5 +1,6 @@
 /**
- * Range slider (two thumbs). Uses PanResponder + Animated to track each thumb.
+ * Range slider (two thumbs). Uses absolute touch position to track each
+ * thumb so taps and drags both work correctly.
  */
 import { useRef, useState } from "react";
 import {
@@ -29,48 +30,66 @@ function clamp(n: number, lo: number, hi: number) {
 
 export default function RangeSlider({ min, max, step = 1, value, onChange, format }: Props) {
   const [width, setWidth] = useState(0);
+  const widthRef = useRef(0);
+  const trackPageXRef = useRef(0);
+  const containerRef = useRef<View>(null);
   const fmt = format ?? ((n: number) => String(n));
   const [lo, hi] = value;
   const valueRef = useRef<[number, number]>(value);
   valueRef.current = value;
-  const widthRef = useRef(0);
+  const draggingRef = useRef<"lo" | "hi" | null>(null);
 
-  const valueToX = (v: number) => ((v - min) / (max - min)) * (width || 1);
   const xToValue = (x: number) => {
     const ratio = clamp(x / (widthRef.current || 1), 0, 1);
     const raw = min + ratio * (max - min);
     return Math.round(raw / step) * step;
   };
 
-  const makePan = (which: "lo" | "hi") =>
+  const pageToLocal = (pageX: number) => pageX - trackPageXRef.current;
+
+  // Decide which thumb to grab based on which is closer to the touch.
+  const pickThumb = (pageX: number): "lo" | "hi" => {
+    const local = pageToLocal(pageX);
+    const xLo = ((valueRef.current[0] - min) / (max - min)) * (widthRef.current || 1);
+    const xHi = ((valueRef.current[1] - min) / (max - min)) * (widthRef.current || 1);
+    return Math.abs(local - xLo) <= Math.abs(local - xHi) ? "lo" : "hi";
+  };
+
+  const update = (pageX: number) => {
+    const which = draggingRef.current;
+    if (!which) return;
+    const next = clamp(xToValue(pageToLocal(pageX)), min, max);
+    const [curLo, curHi] = valueRef.current;
+    if (which === "lo") onChange([Math.min(next, curHi - step), curHi]);
+    else onChange([curLo, Math.max(next, curLo + step)]);
+  };
+
+  const pan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, g) => {
-        const [curLo, curHi] = valueRef.current;
-        const startX = valueToX(which === "lo" ? curLo : curHi);
-        const next = clamp(xToValue(startX + g.dx), min, max);
-        if (which === "lo") {
-          const nlo = Math.min(next, curHi - step);
-          onChange([nlo, curHi]);
-        } else {
-          const nhi = Math.max(next, curLo + step);
-          onChange([curLo, nhi]);
-        }
+      onPanResponderGrant: (e) => {
+        draggingRef.current = pickThumb(e.nativeEvent.pageX);
+        update(e.nativeEvent.pageX);
       },
-    });
-
-  const panLo = useRef(makePan("lo")).current;
-  const panHi = useRef(makePan("hi")).current;
+      onPanResponderMove: (e) => update(e.nativeEvent.pageX),
+      onPanResponderRelease: () => {
+        draggingRef.current = null;
+      },
+    }),
+  ).current;
 
   const onLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
     setWidth(w);
     widthRef.current = w;
+    containerRef.current?.measure((_x, _y, _w, _h, pageX) => {
+      trackPageXRef.current = pageX;
+    });
   };
 
-  const xLo = valueToX(lo);
-  const xHi = valueToX(hi);
+  const xLo = ((lo - min) / (max - min)) * (width || 1);
+  const xHi = ((hi - min) / (max - min)) * (width || 1);
 
   return (
     <View style={styles.wrap}>
@@ -80,7 +99,12 @@ export default function RangeSlider({ min, max, step = 1, value, onChange, forma
           {fmt(lo)} <Text style={{ color: colors.mutedForeground }}>—</Text> {fmt(hi)}
         </Text>
       </View>
-      <View style={styles.trackWrap} onLayout={onLayout}>
+      <View
+        ref={containerRef}
+        style={styles.trackWrap}
+        onLayout={onLayout}
+        {...pan.panHandlers}
+      >
         <View style={styles.track} />
         <View
           style={[
@@ -88,14 +112,8 @@ export default function RangeSlider({ min, max, step = 1, value, onChange, forma
             { left: xLo, right: Math.max(0, (width || 0) - xHi) },
           ]}
         />
-        <View
-          {...panLo.panHandlers}
-          style={[styles.thumb, { left: xLo - THUMB / 2 }]}
-        />
-        <View
-          {...panHi.panHandlers}
-          style={[styles.thumb, { left: xHi - THUMB / 2 }]}
-        />
+        <View pointerEvents="none" style={[styles.thumb, { left: xLo - THUMB / 2 }]} />
+        <View pointerEvents="none" style={[styles.thumb, { left: xHi - THUMB / 2 }]} />
       </View>
     </View>
   );

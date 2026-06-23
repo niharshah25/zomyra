@@ -1,5 +1,7 @@
 /**
- * Single-thumb slider (used for height & 1..5 scale slider).
+ * Single-thumb slider with proper touch tracking. Tapping anywhere on the
+ * track jumps the thumb to that position; dragging moves it. Works on both
+ * native (PanResponder) and web.
  */
 import { useRef, useState } from "react";
 import {
@@ -20,6 +22,7 @@ type Props = {
 };
 
 const THUMB = 28;
+const TRACK_HEIGHT = 44;
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
@@ -27,30 +30,31 @@ function clamp(n: number, lo: number, hi: number) {
 
 export function Slider({ min, max, step = 1, value, onChange }: Props) {
   const [width, setWidth] = useState(0);
-  const valueRef = useRef(value);
-  valueRef.current = value;
   const widthRef = useRef(0);
+  const trackPageXRef = useRef(0);
+  const containerRef = useRef<View>(null);
 
-  const valueToX = (v: number) => ((v - min) / (max - min)) * (width || 1);
   const xToValue = (x: number) => {
     const ratio = clamp(x / (widthRef.current || 1), 0, 1);
     const raw = min + ratio * (max - min);
     return Math.round(raw / step) * step;
   };
 
+  // Convert a page-space X into local track-space X.
+  const pageToLocal = (pageX: number) => pageX - trackPageXRef.current;
+
+  const update = (pageX: number) => {
+    const next = clamp(xToValue(pageToLocal(pageX)), min, max);
+    onChange(next);
+  };
+
   const pan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) => {
-        const x = e.nativeEvent.locationX;
-        onChange(clamp(xToValue(x), min, max));
-      },
-      onPanResponderMove: (_, g) => {
-        const startX = valueToX(valueRef.current);
-        const next = clamp(xToValue(startX + g.dx), min, max);
-        onChange(next);
-      },
+      onPanResponderGrant: (e) => update(e.nativeEvent.pageX),
+      onPanResponderMove: (e) => update(e.nativeEvent.pageX),
+      onPanResponderRelease: (e) => update(e.nativeEvent.pageX),
     }),
   ).current;
 
@@ -58,22 +62,34 @@ export function Slider({ min, max, step = 1, value, onChange }: Props) {
     const w = e.nativeEvent.layout.width;
     setWidth(w);
     widthRef.current = w;
+    // Record the absolute X of the track so we can convert pageX → local X.
+    containerRef.current?.measure((_x, _y, _w, _h, pageX) => {
+      trackPageXRef.current = pageX;
+    });
   };
 
-  const x = valueToX(value);
+  const x = ((value - min) / (max - min)) * (width || 1);
 
   return (
-    <View style={styles.trackWrap} onLayout={onLayout} {...pan.panHandlers}>
+    <View
+      ref={containerRef}
+      style={styles.trackWrap}
+      onLayout={onLayout}
+      {...pan.panHandlers}
+    >
       <View style={styles.track} />
       <View style={[styles.activeTrack, { width: x }]} />
-      <View style={[styles.thumb, { left: x - THUMB / 2 }]} />
+      <View
+        pointerEvents="none"
+        style={[styles.thumb, { left: x - THUMB / 2 }]}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   trackWrap: {
-    height: 44,
+    height: TRACK_HEIGHT,
     justifyContent: "center",
   },
   track: {
