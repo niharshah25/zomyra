@@ -68,31 +68,35 @@ export function TreasureMap({
   const pulseOpacity = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
-    // Reset state.
-    drawSeg1.setValue(info.step >= 2 ? SEG1_LENGTH : SEG1_LENGTH);
+    // Reset segment offsets. For sections >= 2 the first segment must already
+    // be fully drawn when the screen mounts — we only animate the *newly
+    // unlocked* segment for the current section. For section 3 specifically
+    // we want the seg1 fully drawn (no replay) and seg2 to animate.
+    drawSeg1.setValue(info.step >= 2 ? (info.step === 2 ? SEG1_LENGTH : 0) : SEG1_LENGTH);
     drawSeg2.setValue(info.step >= 3 ? SEG2_LENGTH : SEG2_LENGTH);
     activeNodeScale.setValue(0.7);
 
     const sequence: Animated.CompositeAnimation[] = [];
 
-    // Animate the *newly unlocked* segment for this section.
-    if (info.step >= 2) {
+    // Animate the newly-unlocked segment for THIS section only. Slower,
+    // more elegant pacing (1600ms with cubic ease-out).
+    if (info.step === 2) {
       sequence.push(
         Animated.timing(drawSeg1, {
           toValue: 0,
-          duration: 900,
+          duration: 1600,
           delay: 250,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: false, // SVG path props can't run on native driver
+          useNativeDriver: false,
         }),
       );
     }
-    if (info.step >= 3) {
+    if (info.step === 3) {
       sequence.push(
         Animated.timing(drawSeg2, {
           toValue: 0,
-          duration: 900,
-          delay: info.step === 3 ? 250 : 0,
+          duration: 1600,
+          delay: 250,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: false,
         }),
@@ -105,21 +109,21 @@ export function TreasureMap({
         toValue: 1,
         delay: 600,
         useNativeDriver: false,
-        bounciness: 12,
+        bounciness: 10,
       }),
     ]).start();
 
-    // Continuous, subtle breathing pulse on the *current* marker. The pulse
-    // is rebuilt on each step change so it only animates the active node and
-    // stops cleanly when the step advances (the previous ring is unmounted).
+    // Gentle breathing pulse on the active marker — scale 1.0 → 1.08, opacity
+    // 0.30 → 0. Subtle "alive" feel without flashing. Rebuilt each step so
+    // it only animates the currently-active node and stops on advance.
     pulseScale.setValue(1);
-    pulseOpacity.setValue(0.35);
+    pulseOpacity.setValue(0.3);
     const loop = Animated.loop(
       Animated.parallel([
         Animated.sequence([
           Animated.timing(pulseScale, {
-            toValue: 1.55,
-            duration: 1600,
+            toValue: 1.45,
+            duration: 1800,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
@@ -132,12 +136,12 @@ export function TreasureMap({
         Animated.sequence([
           Animated.timing(pulseOpacity, {
             toValue: 0,
-            duration: 1600,
+            duration: 1800,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.timing(pulseOpacity, {
-            toValue: 0.35,
+            toValue: 0.3,
             duration: 0,
             useNativeDriver: true,
           }),

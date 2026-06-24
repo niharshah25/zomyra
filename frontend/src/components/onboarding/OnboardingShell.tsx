@@ -1,6 +1,17 @@
 import { ArrowLeft } from "lucide-react-native";
 import { useEffect, useRef, type ReactNode } from "react";
-import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Animated,
+  Easing,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, radii } from "@/src/theme/colors";
@@ -13,6 +24,8 @@ type Props = {
   onBack: () => void;
   onNext: () => void;
   canNext: boolean;
+  /** Hide the bottom Continue button entirely (used for auto-advancing single-selects). */
+  hideNext?: boolean;
   nextLabel?: string;
   loading?: boolean;
   hideStepLabel?: boolean;
@@ -32,6 +45,7 @@ export function OnboardingShell({
   onBack,
   onNext,
   canNext,
+  hideNext,
   nextLabel = "Continue",
   loading,
   hideStepLabel,
@@ -39,19 +53,29 @@ export function OnboardingShell({
   children,
 }: Props) {
   const insets = useSafeAreaInsets();
-  const pct = Math.min(100, Math.round(((step + 1) / total) * 100));
+  const targetPct = Math.min(100, Math.round(((step + 1) / total) * 100));
 
-  // Cross-question transition: fade + slight slide-from-right each time
-  // `transitionKey` (or `step`) changes.
+  // Cross-question transition: fade + slight vertical slide each time
+  // `transitionKey` changes. Slight vertical movement reads more like
+  // a "card stack" advance than a horizontal swipe.
   const opacity = useRef(new Animated.Value(1)).current;
-  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
   const animKey = transitionKey ?? step;
   const firstRender = useRef(true);
 
-  // Subtle pulse on the leading edge of the progress bar so the current step
-  // feels "alive". Stops automatically when the step is complete (component
-  // unmounts on navigation).
-  const pulse = useRef(new Animated.Value(0.45)).current;
+  // Smoothly animate the progress bar width with ease-in-out 300ms.
+  const progressAnim = useRef(new Animated.Value(targetPct)).current;
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: targetPct,
+      duration: 300,
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: false, // width is a layout prop
+    }).start();
+  }, [targetPct, progressAnim]);
+
+  // Subtle breathing pulse on the leading dot of the progress bar.
+  const pulse = useRef(new Animated.Value(0.5)).current;
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
@@ -62,7 +86,7 @@ export function OnboardingShell({
           useNativeDriver: true,
         }),
         Animated.timing(pulse, {
-          toValue: 0.45,
+          toValue: 0.5,
           duration: 900,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
@@ -79,73 +103,98 @@ export function OnboardingShell({
       return;
     }
     opacity.setValue(0);
-    translateX.setValue(16);
+    translateY.setValue(12);
     Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 240, useNativeDriver: true }),
-      Animated.timing(translateX, { toValue: 0, duration: 240, useNativeDriver: true }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
     ]).start();
-  }, [animKey, opacity, translateX]);
+  }, [animKey, opacity, translateY]);
+
+  const widthInterpolation = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ["0%", "100%"],
+  });
 
   return (
     <SafeAreaView style={styles.root} edges={["top", "left", "right"]}>
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <Pressable
-            testID="onboarding-back"
-            onPress={onBack}
-            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
-            hitSlop={8}
-          >
-            <ArrowLeft size={20} color={colors.foreground} strokeWidth={2.2} />
-          </Pressable>
-          {!hideStepLabel ? (
-            <Text style={styles.stepLabel}>
-              Step {step + 1} of {total}
-            </Text>
-          ) : (
-            <View />
-          )}
-        </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressBar, { width: `${pct}%` }]}>
-            <Animated.View style={[styles.progressPulse, { opacity: pulse }]} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <Pressable
+              testID="onboarding-back"
+              onPress={onBack}
+              style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
+              hitSlop={8}
+            >
+              <ArrowLeft size={20} color={colors.foreground} strokeWidth={2.2} />
+            </Pressable>
+            {!hideStepLabel ? (
+              <Text style={styles.stepLabel}>
+                Step {step + 1} of {total}
+              </Text>
+            ) : (
+              <View />
+            )}
+          </View>
+          <View style={styles.progressTrack}>
+            <Animated.View style={[styles.progressBar, { width: widthInterpolation }]}>
+              <Animated.View style={[styles.progressPulse, { opacity: pulse }]} />
+            </Animated.View>
           </View>
         </View>
-      </View>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Animated.View
-          style={[
-            styles.questionWrap,
-            { opacity, transform: [{ translateX }] },
-          ]}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-          <View style={styles.bodyWrap}>{children}</View>
-        </Animated.View>
-      </ScrollView>
+          <Animated.View
+            style={[
+              styles.questionWrap,
+              { opacity, transform: [{ translateY }] },
+            ]}
+          >
+            <Text style={styles.title}>{title}</Text>
+            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            <View style={styles.bodyWrap}>{children}</View>
+          </Animated.View>
+        </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <Pressable
-          testID="onboarding-next"
-          disabled={!canNext || loading}
-          onPress={onNext}
-          style={({ pressed }) => [
-            styles.nextBtn,
-            (!canNext || loading) && styles.nextBtnDisabled,
-            pressed && canNext && { opacity: 0.92 },
-          ]}
-        >
-          {loading ? <ActivityIndicator color={colors.primaryForeground} /> : null}
-          <Text style={styles.nextLabel}>{nextLabel}</Text>
-        </Pressable>
-      </View>
+        {!hideNext ? (
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <Pressable
+              testID="onboarding-next"
+              disabled={!canNext || loading}
+              onPress={onNext}
+              style={({ pressed }) => [
+                styles.nextBtn,
+                (!canNext || loading) && styles.nextBtnDisabled,
+                pressed && canNext && { opacity: 0.92 },
+              ]}
+            >
+              {loading ? <ActivityIndicator color={colors.primaryForeground} /> : null}
+              <Text style={styles.nextLabel}>{nextLabel}</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={{ paddingBottom: Math.max(insets.bottom, 12) }} />
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

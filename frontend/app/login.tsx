@@ -1,6 +1,6 @@
 import { Phone } from "lucide-react-native";
 import { useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Logo, Wordmark } from "@/src/components/brand/Logo";
@@ -11,28 +11,39 @@ export default function Login() {
   const router = useRouter();
   return (
     <SafeAreaView style={styles.root} edges={["top", "left", "right", "bottom"]}>
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 28 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.hero}>
+      <View style={styles.container}>
+        {/* Top — brand mark sits high on the screen */}
+        <View style={styles.brand}>
           <View style={styles.logoRow}>
-            <Logo size={36} />
-            <Wordmark fontSize={26} />
+            <Logo size={56} />
+            <Wordmark fontSize={36} />
+          </View>
+        </View>
+
+        {/* Middle — tagline + illustration occupy the visual breathing room */}
+        <View style={styles.middle}>
+          <View style={styles.illustrationWrap}>
+            <Image
+              source={require("../assets/images/login-illustration.png")}
+              style={styles.illustration}
+              resizeMode="contain"
+            />
           </View>
           <Text style={styles.title}>Find a partner who shares your values.</Text>
           <Text style={styles.subtitle}>Meaningful matchmaking for modern Indians.</Text>
         </View>
 
-        <View style={styles.illustrationWrap}>
-          <Image
-            source={require("../assets/images/login-illustration.png")}
-            style={styles.illustration}
-            resizeMode="contain"
-          />
-        </View>
+        {/* Bottom — anchored auth CTAs */}
+        <View style={styles.bottom}>
+          <Pressable
+            testID="login-continue-google"
+            onPress={() => toast.show("Google sign-in coming soon")}
+            style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.92 }]}
+          >
+            <Text style={styles.googleG}>G</Text>
+            <Text style={styles.secondaryBtnText}>Continue with Google</Text>
+          </Pressable>
 
-        <View style={{ gap: 12 }}>
           <Pressable
             testID="login-continue-phone"
             onPress={() => router.push("/phone")}
@@ -42,48 +53,60 @@ export default function Login() {
             <Text style={styles.primaryBtnText}>Continue with Phone</Text>
           </Pressable>
 
-          <Pressable
-            testID="login-continue-google"
-            onPress={() => toast.show("Google sign-in coming soon")}
-            style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.92 }]}
-          >
-            <Text style={styles.googleG}>G</Text>
-            <Text style={styles.secondaryBtnText}>Continue with Google</Text>
-          </Pressable>
-        </View>
-
-        <Text style={styles.legal}>
-          By continuing, you agree to our{" "}
-          <Text
-            testID="login-terms-link"
-            style={styles.legalLink}
-            onPress={() => router.push("/terms")}
-          >
-            Terms of Service
-          </Text>{" "}
-          and{" "}
-          <Text
-            testID="login-privacy-link"
-            style={styles.legalLink}
-            onPress={() => router.push("/privacy")}
-          >
-            Privacy Policy
+          <Text style={styles.legal}>
+            By continuing, you agree to our{" "}
+            <Text
+              testID="login-terms-link"
+              style={styles.legalLink}
+              onPress={() => router.push("/terms")}
+            >
+              Terms of Service
+            </Text>{" "}
+            and{" "}
+            <Text
+              testID="login-privacy-link"
+              style={styles.legalLink}
+              onPress={() => router.push("/privacy")}
+            >
+              Privacy Policy
+            </Text>
+            .
           </Text>
-          .
-        </Text>
-      </ScrollView>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  hero: { alignItems: "center", marginTop: 16 },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  container: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  // Brand sits at the very top of the safe area.
+  brand: {
+    alignItems: "center",
+    paddingTop: 12,
+  },
+  logoRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  // Middle absorbs all the spare vertical space so the CTAs stay anchored.
+  middle: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  illustrationWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  illustration: { width: 280, height: 210 },
   title: {
-    marginTop: 18,
     fontSize: 26,
-    lineHeight: 31,
+    lineHeight: 32,
     fontWeight: "800",
     color: colors.foreground,
     letterSpacing: -0.4,
@@ -95,8 +118,10 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     textAlign: "center",
   },
-  illustrationWrap: { alignItems: "center", justifyContent: "center", marginVertical: 12 },
-  illustration: { width: 260, height: 196 },
+  // Bottom — anchored auth CTAs.
+  bottom: {
+    gap: 12,
+  },
   primaryBtn: {
     height: 56,
     borderRadius: radii.lg,
@@ -135,15 +160,17 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   legal: {
-    marginTop: 18,
+    marginTop: 14,
     fontSize: 12,
     lineHeight: 18,
     color: colors.mutedForeground,
     textAlign: "center",
   },
+  // Modern mobile pattern: bold colored link text instead of underline
+  // (Bumble/Hinge/Airbnb-style). Reads cleaner on small text than RN's
+  // tight default underline which sits flush against the baseline.
   legalLink: {
-    color: colors.foreground,
-    fontWeight: "600",
-    textDecorationLine: "underline",
+    color: colors.primary,
+    fontWeight: "700",
   },
 });

@@ -29,6 +29,23 @@ export default function PhoneScreen() {
   const isValid = digits.length === country.length;
   const showError = touched && phone.length > 0 && !isValid;
 
+  // Autofill / paste handling: when iOS or Android auto-fills the field with
+  // a full international number (e.g. "+919408265432" or "919408265432"),
+  // strip the leading country dial code so we only store the local digits.
+  // The country code is controlled separately by the CountrySelector.
+  const onChangePhone = (t: string) => {
+    let raw = t.replace(/\D/g, "");
+    const dialDigits = country.dial.replace(/\D/g, ""); // "91"
+    if (
+      dialDigits &&
+      raw.length > country.length &&
+      raw.startsWith(dialDigits)
+    ) {
+      raw = raw.slice(dialDigits.length);
+    }
+    setPhone(raw.slice(0, country.length));
+  };
+
   const send = async () => {
     if (!isValid || sending) return;
     setSending(true);
@@ -60,13 +77,14 @@ export default function PhoneScreen() {
             <TextInput
               testID="phone-input"
               value={phone}
-              onChangeText={(t) => setPhone(t.replace(/\D/g, "").slice(0, country.length))}
+              onChangeText={onChangePhone}
               onBlur={() => setTouched(true)}
               keyboardType="number-pad"
               placeholder="Enter mobile number"
               placeholderTextColor={colors.mutedForeground}
-              autoComplete="off"
+              autoComplete="tel"
               autoCorrect={false}
+              maxLength={country.length}
               textContentType="telephoneNumber"
               style={[styles.input, showError && { borderColor: colors.destructive }]}
             />
@@ -79,11 +97,9 @@ export default function PhoneScreen() {
           ) : null}
 
           <Text style={styles.hint}>
-            We'll text a 6-digit code to{" "}
-            <Text style={styles.hintStrong}>
-              {country.flag} {country.name} ({country.dial})
-            </Text>
-            .
+            {isValid
+              ? `We'll send a verification code to ${country.dial} ${digits}.`
+              : "We'll send a verification code to your phone number."}
           </Text>
 
           <Pressable

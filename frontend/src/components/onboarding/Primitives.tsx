@@ -51,7 +51,7 @@ export function OptionCard({ selected, onSelect, title, description, compact }: 
   );
 }
 
-/* ============ OptionGrid (multi-column responsive grid) ============ */
+/* ============ OptionGrid (responsive chip-style grid) ============ */
 export function OptionGrid<T extends string>({
   options,
   value,
@@ -63,9 +63,9 @@ export function OptionGrid<T extends string>({
   onChange: (v: T) => void;
   compact?: boolean;
 }) {
-  // Render a flex-wrapped grid: ~2 columns on phones (minWidth 140px),
-  // more if device width allows it; each card grows to fill its row so
-  // the last card in an odd row doesn't look orphaned.
+  // Chips: content-based width, wraps, centered. Looks like Bumble/Hinge
+  // tag-style chips instead of full-width buttons. Cards animate on select
+  // (scale 0.97 on press, soft border/bg transition).
   void compact;
   return (
     <View style={styles.gridWrap}>
@@ -77,20 +77,20 @@ export function OptionGrid<T extends string>({
             testID={`option-${opt}`}
             onPress={() => onChange(opt)}
             style={({ pressed }) => [
-              styles.gridCard,
-              selected && styles.gridCardSelected,
-              pressed && { transform: [{ scale: 0.98 }] },
+              styles.chipCard,
+              selected && styles.chipCardSelected,
+              pressed && { transform: [{ scale: 0.97 }] },
             ]}
           >
             <Text
-              numberOfLines={2}
-              style={[styles.gridCardText, selected && styles.gridCardTextSelected]}
+              numberOfLines={1}
+              style={[styles.chipCardText, selected && styles.chipCardTextSelected]}
             >
               {opt}
             </Text>
             {selected ? (
-              <View style={styles.gridCheck}>
-                <Check size={11} color={colors.primaryForeground} strokeWidth={3.5} />
+              <View style={styles.chipCheck}>
+                <Check size={10} color={colors.primaryForeground} strokeWidth={3.5} />
               </View>
             ) : null}
           </Pressable>
@@ -200,7 +200,6 @@ export function SearchableSelect({
                 placeholder="Search…"
                 placeholderTextColor={colors.mutedForeground}
                 style={styles.searchInput}
-                autoFocus
               />
             </View>
             <FlatList
@@ -291,47 +290,45 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 12,
   },
-  // ---- Responsive grid layout for OptionGrid ----
+  // ---- Chip-style grid layout (content-based width, wrapped, centered) ----
   gridWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     width: "100%",
-  },
-  gridCard: {
-    flexGrow: 1,
-    flexBasis: "45%",
-    minWidth: 130,
-    minHeight: 56,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    alignItems: "center",
     justifyContent: "center",
   },
-  gridCardSelected: {
+  chipCard: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  chipCardSelected: {
     borderColor: colors.primary,
     borderWidth: 2,
     backgroundColor: colors.secondary,
   },
-  gridCardText: {
+  chipCardText: {
     fontSize: 14,
     fontWeight: "600",
     color: colors.foreground,
     textAlign: "center",
   },
-  gridCardTextSelected: {
+  chipCardTextSelected: {
     color: colors.primary,
   },
-  gridCheck: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 18,
-    height: 18,
+  chipCheck: {
+    marginLeft: 8,
+    width: 16,
+    height: 16,
     borderRadius: 999,
     backgroundColor: colors.primary,
     alignItems: "center",
@@ -341,6 +338,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+    justifyContent: "center",
   },
   chip: {
     paddingHorizontal: 14,

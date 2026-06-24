@@ -4,13 +4,12 @@
  * exact catalogue from the web app's onboarding.tsx.
  */
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { OnboardingShell } from "@/src/components/onboarding/OnboardingShell";
 import {
   ChipGroup,
-  OptionCard,
   OptionGrid,
   RangeDualSlider,
   SearchableSelect,
@@ -35,10 +34,22 @@ import type { OnboardingState } from "@/src/lib/onboarding/types";
 type Section = 1 | 2 | 3;
 type IntroScreen = { kind: "intro"; section: Section };
 type Setter = <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
-type RenderResult = { title: string; subtitle?: string; body: ReactNode; canNext: boolean };
+type RenderResult = {
+  title: string;
+  subtitle?: string;
+  body: ReactNode;
+  canNext: boolean;
+  /** Hide the Continue button entirely (used in tandem with `autoAdvance`). */
+  hideNext?: boolean;
+};
 type QuestionScreen = {
   kind: "q";
   section: Section;
+  /**
+   * When true, the question auto-advances ~250ms after the user picks an
+   * option (no Continue tap needed). Use only for single-select questions.
+   */
+  autoAdvance?: boolean;
   render: (s: OnboardingState, set: Setter) => RenderResult;
 };
 type Screen = IntroScreen | QuestionScreen;
@@ -106,29 +117,24 @@ const Q1: QuestionScreen[] = [
     },
   },
   {
-    kind: "q", section: 1,
+    kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
       title: "I am",
       canNext: !!s.gender,
+      hideNext: !!s.gender,
       body: (
-        <View style={{ gap: 8 }}>
-          {(["Female", "Male", "Non-binary", "Prefer not to say"] as const).map((g) => (
-            <OptionCard
-              key={g}
-              title={g}
-              selected={s.gender === g}
-              onSelect={() => {
-                set("gender", g);
-                // Auto-default partner gender to the conventional opposite.
-                // The user can still change it later in their preferences.
-                if (g === "Female") set("prefGender", "Male");
-                else if (g === "Male") set("prefGender", "Female");
-                else if (!s.prefGender) set("prefGender", g);
-              }}
-              compact
-            />
-          ))}
-        </View>
+        <OptionGrid
+          options={["Female", "Male", "Non-binary", "Prefer not to say"] as const}
+          value={s.gender}
+          onChange={(g) => {
+            set("gender", g);
+            // Auto-default partner gender to the conventional opposite.
+            // The user can still change it later in their preferences.
+            if (g === "Female") set("prefGender", "Male");
+            else if (g === "Male") set("prefGender", "Female");
+            else if (!s.prefGender) set("prefGender", g);
+          }}
+        />
       ),
     }),
   },
@@ -177,10 +183,11 @@ const Q1: QuestionScreen[] = [
     },
   },
   {
-    kind: "q", section: 1,
+    kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
       title: "How would you describe your build?",
       canNext: !!s.bodyType,
+      hideNext: !!s.bodyType,
       body: (
         <OptionGrid
           options={["Slim", "Average", "Athletic", "Curvy", "Plus Size", "Prefer Not To Say"] as const}
@@ -192,10 +199,11 @@ const Q1: QuestionScreen[] = [
     }),
   },
   {
-    kind: "q", section: 1,
+    kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
       title: "Your highest education?",
       canNext: !!s.education,
+      hideNext: !!s.education,
       body: (
         <OptionGrid
           options={["High School", "Diploma", "Bachelor's Degree", "Master's Degree", "MBA", "PhD", "Other"] as const}
@@ -223,10 +231,11 @@ const Q1: QuestionScreen[] = [
     }),
   },
   {
-    kind: "q", section: 1,
+    kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
       title: "Income range?",
       canNext: !!s.income,
+      hideNext: !!s.income,
       body: (
         <OptionGrid
           options={["Under ₹5 LPA", "₹5–10 LPA", "₹10–20 LPA", "₹20–35 LPA", "₹35–50 LPA", "₹50 LPA+", "Prefer Not To Say"] as const}
@@ -238,10 +247,11 @@ const Q1: QuestionScreen[] = [
     }),
   },
   {
-    kind: "q", section: 1,
+    kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
       title: "Your diet?",
       canNext: !!s.diet,
+      hideNext: !!s.diet,
       body: (
         <OptionGrid
           options={["Vegetarian", "Eggetarian", "Non-Vegetarian", "Vegan"] as const}
@@ -253,10 +263,11 @@ const Q1: QuestionScreen[] = [
     }),
   },
   {
-    kind: "q", section: 1,
+    kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
       title: "Do you drink?",
       canNext: !!s.drinking,
+      hideNext: !!s.drinking,
       body: (
         <OptionGrid
           options={["Never", "Socially", "Occasionally", "Frequently"] as const}
@@ -268,10 +279,11 @@ const Q1: QuestionScreen[] = [
     }),
   },
   {
-    kind: "q", section: 1,
+    kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
       title: "Do you smoke?",
       canNext: !!s.smoking,
+      hideNext: !!s.smoking,
       body: (
         <OptionGrid
           options={["Never", "Occasionally", "Frequently"] as const}
@@ -283,10 +295,11 @@ const Q1: QuestionScreen[] = [
     }),
   },
   {
-    kind: "q", section: 1,
+    kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
       title: "How active are you?",
       canNext: !!s.fitness,
+      hideNext: !!s.fitness,
       body: (
         <OptionGrid
           options={["Not Important", "Moderately Active", "Active", "Fitness Enthusiast"] as const}
@@ -307,11 +320,12 @@ const Q1: QuestionScreen[] = [
     }),
   },
   {
-    kind: "q", section: 1,
+    kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
       title: "Your world",
       subtitle: "How does your family live?",
       canNext: !!s.familyStructure,
+      hideNext: !!s.familyStructure,
       body: (
         <OptionGrid
           options={["Nuclear Family", "Joint Family", "Flexible"] as const}
@@ -339,10 +353,11 @@ const Q1: QuestionScreen[] = [
     }),
   },
   {
-    kind: "q", section: 1,
+    kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
       title: "Where should your match be?",
       canNext: !!s.prefLocation,
+      hideNext: !!s.prefLocation,
       body: (
         <OptionGrid
           options={["Same City", "Same State", "Anywhere in India", "Open to International Matches"] as const}
@@ -355,11 +370,11 @@ const Q1: QuestionScreen[] = [
 ];
 
 const Q2: QuestionScreen[] = [
-  { kind: "q", section: 2, render: (s, set) => ({ title: "Do you want children in the future?", canNext: !!s.nnChildren, body: <OptionGrid options={["Yes", "No", "Undecided"] as const} value={s.nnChildren} onChange={(v) => set("nnChildren", v)} /> }) },
-  { kind: "q", section: 2, render: (s, set) => ({ title: "Would you consider an interfaith marriage?", canNext: !!s.nnInterfaith, body: <OptionGrid options={["Yes", "No", "Depends on the Person"] as const} value={s.nnInterfaith} onChange={(v) => set("nnInterfaith", v)} /> }) },
-  { kind: "q", section: 2, render: (s, set) => ({ title: "Comfortable marrying a smoker?", canNext: !!s.nnSmoker, body: <OptionGrid options={["Yes", "No", "Occasional Smoking Only"] as const} value={s.nnSmoker} onChange={(v) => set("nnSmoker", v)} /> }) },
-  { kind: "q", section: 2, render: (s, set) => ({ title: "Your future household?", canNext: !!s.nnHousehold, body: <OptionGrid options={["Vegetarian Household Only", "Flexible Household", "No Preference"] as const} value={s.nnHousehold} onChange={(v) => set("nnHousehold", v)} /> }) },
-  { kind: "q", section: 2, render: (s, set) => ({ title: "Would you relocate after marriage?", canNext: !!s.nnRelocation, body: <OptionGrid options={["Yes", "No", "Depends on Circumstances"] as const} value={s.nnRelocation} onChange={(v) => set("nnRelocation", v)} /> }) },
+  { kind: "q", section: 2, autoAdvance: true, render: (s, set) => ({ title: "Do you want children in the future?", canNext: !!s.nnChildren, hideNext: !!s.nnChildren, body: <OptionGrid options={["Yes", "No", "Undecided"] as const} value={s.nnChildren} onChange={(v) => set("nnChildren", v)} /> }) },
+  { kind: "q", section: 2, autoAdvance: true, render: (s, set) => ({ title: "Would you consider an interfaith marriage?", canNext: !!s.nnInterfaith, hideNext: !!s.nnInterfaith, body: <OptionGrid options={["Yes", "No", "Depends on the Person"] as const} value={s.nnInterfaith} onChange={(v) => set("nnInterfaith", v)} /> }) },
+  { kind: "q", section: 2, autoAdvance: true, render: (s, set) => ({ title: "Comfortable marrying a smoker?", canNext: !!s.nnSmoker, hideNext: !!s.nnSmoker, body: <OptionGrid options={["Yes", "No", "Occasional Smoking Only"] as const} value={s.nnSmoker} onChange={(v) => set("nnSmoker", v)} /> }) },
+  { kind: "q", section: 2, autoAdvance: true, render: (s, set) => ({ title: "Your future household?", canNext: !!s.nnHousehold, hideNext: !!s.nnHousehold, body: <OptionGrid options={["Vegetarian Household Only", "Flexible Household", "No Preference"] as const} value={s.nnHousehold} onChange={(v) => set("nnHousehold", v)} /> }) },
+  { kind: "q", section: 2, autoAdvance: true, render: (s, set) => ({ title: "Would you relocate after marriage?", canNext: !!s.nnRelocation, hideNext: !!s.nnRelocation, body: <OptionGrid options={["Yes", "No", "Depends on Circumstances"] as const} value={s.nnRelocation} onChange={(v) => set("nnRelocation", v)} /> }) },
 ];
 
 const Q3: QuestionScreen[] = SCALE_QUESTIONS.map((q) => ({
@@ -438,6 +453,33 @@ export default function OnboardingScreen() {
     setStepIdx(idx + 1);
   };
 
+  // Auto-advance helper for single-select questions: after the user taps
+  // an option, give them ~250ms to see the selected state animate, then
+  // advance to the next screen. We guard against the screen changing
+  // mid-timeout by comparing the captured `idx` to the latest store value.
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    };
+  }, []);
+  const scheduleAdvance = () => {
+    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    advanceTimerRef.current = setTimeout(() => {
+      handleNext();
+    }, 250);
+  };
+
+  // Wrap `set` so single-select questions can fire auto-advance after the
+  // option is committed. Multi-select / text-input screens keep using
+  // the plain `set` (`autoAdvance` is false on those).
+  const autoSet: typeof set = (k, v) => {
+    set(k, v);
+    if (screen.kind === "q" && screen.autoAdvance) {
+      scheduleAdvance();
+    }
+  };
+
   // Wait for the persisted state to rehydrate before rendering so the
   // user always resumes on the correct step.
   if (!hasHydrated) {
@@ -450,7 +492,7 @@ export default function OnboardingScreen() {
     );
   }
 
-  const r = screen.render(state, set);
+  const r = screen.render(state, screen.autoAdvance ? autoSet : set);
   const isLast = idx === SCREENS.length - 1;
   return (
     <OnboardingShell
@@ -461,6 +503,7 @@ export default function OnboardingScreen() {
       onBack={handleBack}
       onNext={handleNext}
       canNext={r.canNext}
+      hideNext={r.hideNext}
       nextLabel={isLast ? "Finish" : "Continue"}
       hideStepLabel
       transitionKey={idx}
