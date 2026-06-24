@@ -63,6 +63,9 @@ export function TreasureMap({
   const drawSeg1 = useRef(new Animated.Value(SEG1_LENGTH)).current;
   const drawSeg2 = useRef(new Animated.Value(SEG2_LENGTH)).current;
   const activeNodeScale = useRef(new Animated.Value(0.8)).current;
+  // Subtle pulse around the active marker (clean, breathing effect).
+  const pulseScale = useRef(new Animated.Value(1)).current;
+  const pulseOpacity = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
     // Reset state.
@@ -105,7 +108,47 @@ export function TreasureMap({
         bounciness: 12,
       }),
     ]).start();
-  }, [info.step, drawSeg1, drawSeg2, activeNodeScale]);
+
+    // Continuous, subtle breathing pulse on the *current* marker. The pulse
+    // is rebuilt on each step change so it only animates the active node and
+    // stops cleanly when the step advances (the previous ring is unmounted).
+    pulseScale.setValue(1);
+    pulseOpacity.setValue(0.35);
+    const loop = Animated.loop(
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(pulseScale, {
+            toValue: 1.55,
+            duration: 1600,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseScale, {
+            toValue: 1,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(pulseOpacity, {
+            toValue: 0,
+            duration: 1600,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseOpacity, {
+            toValue: 0.35,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]),
+    );
+    loop.start();
+    return () => {
+      loop.stop();
+    };
+  }, [info.step, drawSeg1, drawSeg2, activeNodeScale, pulseScale, pulseOpacity]);
 
   // Map the viewBox-coordinate nodes to overlay pixels.
   const mapWidth = 300;
@@ -173,6 +216,26 @@ export function TreasureMap({
             const top = (n.y / VIEW_H) * mapHeight - 20;
             return (
               <View key={n.label} style={[styles.nodeWrap, { left, top }]}>
+                {/* Solid bg mask hides any dashed-route artifacts directly
+                    under the marker so it always reads as a clean icon. */}
+                <View style={styles.nodeMask} pointerEvents="none" />
+
+                {/* Subtle breathing pulse ring — only on the active marker.
+                    It stops automatically when this node is no longer active
+                    (next step unmounts this element). */}
+                {state === "active" ? (
+                  <Animated.View
+                    pointerEvents="none"
+                    style={[
+                      styles.pulseRing,
+                      {
+                        opacity: pulseOpacity,
+                        transform: [{ scale: pulseScale }],
+                      },
+                    ]}
+                  />
+                ) : null}
+
                 <Animated.View
                   style={[
                     styles.nodeDot,
@@ -252,6 +315,27 @@ const styles = StyleSheet.create({
     position: "absolute",
     alignItems: "center",
     width: 40,
+  },
+  // Solid bg circle behind the node icon so any dashed route below the
+  // marker is fully masked — keeps the marker reading as a clean icon.
+  nodeMask: {
+    position: "absolute",
+    top: -4,
+    left: -4,
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: colors.background,
+  },
+  // Outer breathing ring used only on the active marker.
+  pulseRing: {
+    position: "absolute",
+    top: -4,
+    left: -4,
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: "rgba(91,44,111,0.18)",
   },
   nodeDot: {
     width: 40,

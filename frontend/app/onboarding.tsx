@@ -4,7 +4,7 @@
  * exact catalogue from the web app's onboarding.tsx.
  */
 import { useRouter } from "expo-router";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { OnboardingShell } from "@/src/components/onboarding/OnboardingShell";
@@ -393,8 +393,22 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const state = useOnboardingStore((s) => s.state);
   const set = useOnboardingStore((s) => s.set);
-  const [idx, setIdx] = useState(0);
+  const stepIdx = useOnboardingStore((s) => s.stepIdx);
+  const setStepIdx = useOnboardingStore((s) => s.setStepIdx);
+  const completed = useOnboardingStore((s) => s.completed);
+  const hasHydrated = useOnboardingStore((s) => s._hasHydrated);
+  const markCompleted = useOnboardingStore((s) => s.markCompleted);
 
+  // If the user previously finished onboarding and we land back here,
+  // start fresh from step 0 (clear the completed flag).
+  useEffect(() => {
+    if (hasHydrated && completed) {
+      setStepIdx(0);
+    }
+  }, [hasHydrated, completed, setStepIdx]);
+
+  // Guard against an out-of-bounds index if SCREENS shrinks across versions.
+  const idx = Math.min(Math.max(stepIdx, 0), SCREENS.length - 1);
   const screen = SCREENS[idx];
 
   const { sectionStepIdx, sectionTotal } = useMemo(() => {
@@ -412,16 +426,23 @@ export default function OnboardingScreen() {
       router.replace("/login");
       return;
     }
-    setIdx((i) => Math.max(0, i - 1));
+    setStepIdx(Math.max(0, idx - 1));
   };
 
   const handleNext = () => {
     if (idx >= SCREENS.length - 1) {
+      markCompleted();
       router.replace("/verify");
       return;
     }
-    setIdx((i) => i + 1);
+    setStepIdx(idx + 1);
   };
+
+  // Wait for the persisted state to rehydrate before rendering so the
+  // user always resumes on the correct step.
+  if (!hasHydrated) {
+    return <View style={{ flex: 1, backgroundColor: "#fff" }} />;
+  }
 
   if (screen.kind === "intro") {
     return (

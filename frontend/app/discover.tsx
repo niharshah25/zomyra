@@ -33,11 +33,6 @@ export default function Discover() {
           <Text style={styles.kicker}>DISCOVER</Text>
           <Text style={styles.title}>Today's matches</Text>
         </View>
-        <View style={styles.counter}>
-          <Text style={styles.counterText}>
-            {idx + 1} / {Math.max(profiles.length, 1)}
-          </Text>
-        </View>
       </View>
 
       <ScrollView
@@ -74,12 +69,7 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
   },
   title: { marginTop: 2, fontSize: 16, fontWeight: "700", color: colors.foreground },
-  counter: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: colors.secondary,
-  },
+  counter: { display: "none" as const },
   counterText: { fontSize: 10.5, fontWeight: "700", color: colors.primary },
   empty: { padding: 32, textAlign: "center", color: colors.mutedForeground },
 });

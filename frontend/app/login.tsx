@@ -53,8 +53,23 @@ export default function Login() {
         </View>
 
         <Text style={styles.legal}>
-          By continuing, you agree to our <Text style={styles.legalLink}>Terms of Service</Text>{" "}
-          and <Text style={styles.legalLink}>Privacy Policy</Text>.
+          By continuing, you agree to our{" "}
+          <Text
+            testID="login-terms-link"
+            style={styles.legalLink}
+            onPress={() => router.push("/terms")}
+          >
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text
+            testID="login-privacy-link"
+            style={styles.legalLink}
+            onPress={() => router.push("/privacy")}
+          >
+            Privacy Policy
+          </Text>
+          .
         </Text>
       </ScrollView>
     </SafeAreaView>

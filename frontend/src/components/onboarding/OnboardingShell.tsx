@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react-native";
 import { useEffect, useRef, type ReactNode } from "react";
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, radii } from "@/src/theme/colors";
@@ -48,6 +48,31 @@ export function OnboardingShell({
   const animKey = transitionKey ?? step;
   const firstRender = useRef(true);
 
+  // Subtle pulse on the leading edge of the progress bar so the current step
+  // feels "alive". Stops automatically when the step is complete (component
+  // unmounts on navigation).
+  const pulse = useRef(new Animated.Value(0.45)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.45,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
   useEffect(() => {
     if (firstRender.current) {
       firstRender.current = false;
@@ -82,7 +107,9 @@ export function OnboardingShell({
           )}
         </View>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressBar, { width: `${pct}%` }]} />
+          <View style={[styles.progressBar, { width: `${pct}%` }]}>
+            <Animated.View style={[styles.progressPulse, { opacity: pulse }]} />
+          </View>
         </View>
       </View>
 
@@ -159,12 +186,25 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 999,
     backgroundColor: colors.secondary,
-    overflow: "hidden",
   },
   progressBar: {
     height: 5,
     backgroundColor: colors.primary,
     borderRadius: 999,
+    justifyContent: "center",
+    alignItems: "flex-end",
+  },
+  progressPulse: {
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+    marginRight: -2,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.55,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 5,
+    elevation: 2,
   },
   // Question container is centered vertically and horizontally.
   scrollContent: {

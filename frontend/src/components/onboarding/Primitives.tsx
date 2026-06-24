@@ -51,7 +51,7 @@ export function OptionCard({ selected, onSelect, title, description, compact }: 
   );
 }
 
-/* ============ OptionGrid (single-select list) ============ */
+/* ============ OptionGrid (multi-column responsive grid) ============ */
 export function OptionGrid<T extends string>({
   options,
   value,
@@ -63,17 +63,39 @@ export function OptionGrid<T extends string>({
   onChange: (v: T) => void;
   compact?: boolean;
 }) {
+  // Render a flex-wrapped grid: ~2 columns on phones (minWidth 140px),
+  // more if device width allows it; each card grows to fill its row so
+  // the last card in an odd row doesn't look orphaned.
+  void compact;
   return (
-    <View style={{ gap: 8 }}>
-      {options.map((opt) => (
-        <OptionCard
-          key={opt}
-          title={opt}
-          selected={value === opt}
-          onSelect={() => onChange(opt)}
-          compact={compact}
-        />
-      ))}
+    <View style={styles.gridWrap}>
+      {options.map((opt) => {
+        const selected = value === opt;
+        return (
+          <Pressable
+            key={opt}
+            testID={`option-${opt}`}
+            onPress={() => onChange(opt)}
+            style={({ pressed }) => [
+              styles.gridCard,
+              selected && styles.gridCardSelected,
+              pressed && { transform: [{ scale: 0.98 }] },
+            ]}
+          >
+            <Text
+              numberOfLines={2}
+              style={[styles.gridCardText, selected && styles.gridCardTextSelected]}
+            >
+              {opt}
+            </Text>
+            {selected ? (
+              <View style={styles.gridCheck}>
+                <Check size={11} color={colors.primaryForeground} strokeWidth={3.5} />
+              </View>
+            ) : null}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -268,6 +290,52 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 12,
+  },
+  // ---- Responsive grid layout for OptionGrid ----
+  gridWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    width: "100%",
+  },
+  gridCard: {
+    flexGrow: 1,
+    flexBasis: "45%",
+    minWidth: 130,
+    minHeight: 56,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  gridCardSelected: {
+    borderColor: colors.primary,
+    borderWidth: 2,
+    backgroundColor: colors.secondary,
+  },
+  gridCardText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.foreground,
+    textAlign: "center",
+  },
+  gridCardTextSelected: {
+    color: colors.primary,
+  },
+  gridCheck: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
   },
   chipWrap: {
     flexDirection: "row",

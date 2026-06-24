@@ -82,7 +82,7 @@ export const defaultOnboardingState: OnboardingState = {
   dob: "",
   gender: "",
   city: "",
-  heightCm: null,
+  heightCm: 168,
   bodyType: "",
   education: "",
   profession: "",
