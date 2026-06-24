@@ -141,7 +141,7 @@ frontend:
     priority: "medium"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Removed the top-right 'idx / total' counter View from the Discover header. Verify that opening /discover shows the DISCOVER kicker + 'Today's matches' title and NO counter chip in the top-right corner."
       - working: true
@@ -156,7 +156,7 @@ frontend:
     priority: "medium"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Created /terms and /privacy screens with the requested sections (Terms: Introduction, User Responsibilities, Acceptable Use, Termination, Contact; Privacy: Data Collection, Data Usage, Verification Data, User Rights, Contact). Scrollable, mobile-friendly, ArrowLeft back button (testID terms-back / privacy-back). On /login the 'Terms of Service' and 'Privacy Policy' inline texts (testID login-terms-link / login-privacy-link) now navigate to those screens. Verify: tap each from /login, content scrolls, back button returns to /login."
       - working: true
@@ -171,7 +171,7 @@ frontend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Added a solid background-colored circular mask behind every map node so the dashed route is fully hidden directly under the marker (no dot artifacts). Added a continuous subtle pulse ring (rgba(91,44,111,0.18), 1.0→1.55 scale, opacity 0.35→0, 1.6s loop) on the ACTIVE node only via Animated.loop; the ring is conditionally rendered for state === 'active' so it stops automatically when the step is completed (component unmounts on advance). Verify on the intro screens (Plot/Anchor/Love) that the active marker is clean and softly breathes."
       - working: true
@@ -186,7 +186,7 @@ frontend:
     priority: "medium"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Added a small soft-glowing pulse dot at the leading edge of the question-screen progress bar (Animated.loop opacity 0.45↔1, 900ms each, useNativeDriver true). Communicates current step. Stops on unmount (i.e. when user navigates away)."
       - working: true
@@ -201,7 +201,7 @@ frontend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Refactored onboarding-store to persist {state, stepIdx, completed} to AsyncStorage under key 'zomyra.onboarding.v1'. Hand-rolled persistence (load on first import, debounced save 200ms on every change) — chose NOT to use zustand/middleware persist because its ESM build references import.meta.env which crashed Metro's web bundle at runtime ('Cannot use import.meta outside a module'). The store now exposes stepIdx + setStepIdx + markCompleted + _hasHydrated. onboarding.tsx reads/writes stepIdx from the store (removed local useState), renders a white placeholder until _hasHydrated, calls markCompleted() before router.replace('/verify'). On next launch the user resumes on the saved screen. If completed=true on landing, stepIdx is reset to 0 for a fresh run. Verify: complete step 1, reload the page, should land on step 2."
       - working: true
@@ -216,7 +216,7 @@ frontend:
     priority: "medium"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Rewrote OptionGrid to render a flex-wrap responsive grid (flexDirection row, flexWrap wrap, gap 10) of pressable cards. Each card uses flexGrow 1 + flexBasis 45% + minWidth 130, so the layout is 2 columns on phones and grows on larger devices. Selected state shows purple border + secondary bg + a small check pill in the top-right. Affects screens: How would you describe your build, Highest education, Income range, Diet, Drink, Smoke, How active, Languages (still uses ChipGroup which already wraps), Your world, Where should your match be, Children, Interfaith marriage, Marrying a smoker, Future household, Relocate after marriage."
       - working: true
@@ -231,7 +231,7 @@ frontend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Changed defaultOnboardingState.heightCm from null to 168 (5'6\"). The 'How tall are you?' screen displays this default immediately and the Continue button (canNext: !!s.heightCm) is now enabled the moment the screen loads — user no longer has to nudge the slider first."
       - working: true
