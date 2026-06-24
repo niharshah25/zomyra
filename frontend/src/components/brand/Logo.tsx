@@ -1,4 +1,4 @@
-import { Image, StyleSheet, View, Text } from "react-native";
+import { Image, StyleSheet, Text } from "react-native";
 
 type LogoProps = {
   size?: number;
@@ -19,16 +19,14 @@ export function Logo({ size = 56 }: LogoProps) {
 
 export function Wordmark({ fontSize = 28 }: { fontSize?: number }) {
   return (
-    <View>
-      <Text
-        style={[
-          styles.text,
-          { fontSize, color: "#7C3AED" },
-        ]}
-      >
-        Zomyra
-      </Text>
-    </View>
+    <Text
+      style={[
+        styles.text,
+        { fontSize, color: "#7C3AED" },
+      ]}
+    >
+      Zomyra
+    </Text>
   );
 }
 
@@ -36,5 +34,9 @@ const styles = StyleSheet.create({
   text: {
     fontWeight: "800",
     letterSpacing: -0.4,
+    // Strip any baseline padding the platform might add so the wordmark
+    // sits exactly next to the logo glyph (centered with it horizontally).
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
 });

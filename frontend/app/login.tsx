@@ -1,6 +1,6 @@
 import { Phone } from "lucide-react-native";
 import { useRouter } from "expo-router";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Logo, Wordmark } from "@/src/components/brand/Logo";
@@ -91,7 +91,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 12,
   },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
   // Middle absorbs all the spare vertical space so the CTAs stay anchored.
   middle: {
     flex: 1,
@@ -169,8 +174,19 @@ const styles = StyleSheet.create({
   // Modern mobile pattern: bold colored link text instead of underline
   // (Bumble/Hinge/Airbnb-style). Reads cleaner on small text than RN's
   // tight default underline which sits flush against the baseline.
+  // On web we also suppress the default tap-highlight + selection box so
+  // tapping the link doesn't paint a gray rectangle around the text.
   legalLink: {
     color: colors.primary,
     fontWeight: "700",
-  },
+    ...Platform.select({
+      web: {
+        cursor: "pointer",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        WebkitTapHighlightColor: "transparent",
+      },
+      default: {},
+    }),
+  } as const,
 });

@@ -349,6 +349,36 @@ frontend:
         agent: "testing"
         comment: "✅ VERIFIED (from previous test). Treasure map renders correctly with all three markers (Plot, Anchor, Love) visible. Dashed route path connects markers cleanly with no artifacts bleeding underneath. Active 'Plot' marker shows breathing pulse animation. Screenshots captured at multiple time intervals confirm pulse animation cycle. Path animation timing slowed to 1600ms. Implementation working as designed."
 
+  - task: "Login screen — Zomyra logo + wordmark horizontal centering"
+    implemented: true
+    working: true
+    file: "frontend/app/login.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Fixed logo centering issue. Removed redundant View wrapper around wordmark text and added justifyContent: 'center' to logoRow flex container. The brand mark (logo glyph + 'Zomyra' wordmark on single row) should now be perfectly centered horizontally on the welcome screen."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED - PERFECT CENTERING. Tested at two viewport sizes: (1) 390x800 viewport: Brand center is EXACTLY 195.00px (viewport center 195.00px) with 0.00px offset - PASS ✅, (2) 412x900 viewport: Brand center is EXACTLY 206.00px (viewport center 206.00px) with 0.00px offset - PASS ✅. Measurements: Logo bounding box (x, width, center) and wordmark bounding box calculated, visual center of brand row computed as (leftEdge + rightEdge) / 2. Both tests show perfect centering within ±8px tolerance (actually 0px offset). Screenshots confirm equal whitespace on left and right sides. Fix working perfectly."
+
+  - task: "Login screen — Terms / Privacy tap-highlight box removal"
+    implemented: true
+    working: true
+    file: "frontend/app/login.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Fixed tap-highlight issue on Terms of Service and Privacy Policy inline links. Added userSelect: 'none', WebkitUserSelect: 'none', and WebkitTapHighlightColor: 'transparent' via Platform.select({ web: {...} }) to the legalLink style. This prevents the gray rectangle (-webkit-tap-highlight-color) and text selection (gray background) when user taps the links on web."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED - ALL STYLES CORRECT. Tested computed styles and navigation for both links: (1) Terms link [data-testid=login-terms-link]: user-select = 'none' ✅, -webkit-tap-highlight-color = 'rgba(0, 0, 0, 0)' ✅, cursor = 'pointer' ✅, (2) Privacy link [data-testid=login-privacy-link]: user-select = 'none' ✅, -webkit-tap-highlight-color = 'rgba(0, 0, 0, 0)' ✅, cursor = 'pointer' ✅, (3) Terms link tap → navigates to /terms ✅, (4) Terms back button → returns to /login ✅, (5) Privacy link tap → navigates to /privacy ✅, (6) Privacy back button → returns to /login ✅. All 6 tests passed. No gray tap-highlight box will appear on tap. Fix working perfectly."
+
 
 metadata:
   created_by: "main_agent"
@@ -381,3 +411,7 @@ agent_communication:
     message: "Fixed phone autofill country-code stripping bug. Removed maxLength prop from TextInput entirely. Now onChangePhone handles the complete flow in correct order: (1) strips non-digits, (2) detects and removes country dial code if present (e.g., +919408265432 → 9408265432), (3) caps at country.length (10 for India) via setPhone(raw.slice(0, country.length)). The stripping logic now runs BEFORE the length cap, which fixes the autofill bug. Ready for re-testing."
   - agent: "testing"
     message: "✅ PHONE AUTOFILL FIX VERIFIED - ALL 5 TESTS PASSED! Re-tested phone screen autofill country-code stripping after main agent's fix. Test results: (1) Autofill +919408265432 → '9408265432' ✅ PASS, (2) Autofill 919408265432 → '9408265432' ✅ PASS, (3) Manual 11-digit cap 94082654321 → '9408265432' ✅ PASS, (4) Normal 10 digits 9876543210 → '9876543210' ✅ PASS, (5) Hint message displays 'We'll send a verification code to +91 9876543210.' ✅ PASS. The fix of removing maxLength and handling capping inside onChangePhone AFTER stripping has completely resolved the issue. Phone screen is now fully functional with correct autofill behavior."
+  - agent: "main"
+    message: "Implemented TWO targeted bug fixes for Zomyra login screen: (1) Logo + wordmark horizontal centering - removed redundant View wrapper around wordmark text and added justifyContent: 'center' to logoRow flex container, (2) Terms / Privacy tap-highlight box removal - added userSelect: 'none' and WebkitTapHighlightColor: 'transparent' via Platform.select({ web: {...} }) to legalLink style. Both fixes ready for testing."
+  - agent: "testing"
+    message: "✅ BOTH BUG FIXES VERIFIED - ALL 8 TESTS PASSED! Comprehensive testing completed on login screen: [BUG 1 - Logo Centering] (1) 390x800 viewport: Brand center EXACTLY 195.00px (viewport center 195.00px) with 0.00px offset ✅ PASS, (2) 412x900 viewport: Brand center EXACTLY 206.00px (viewport center 206.00px) with 0.00px offset ✅ PASS. Perfect centering achieved with equal whitespace on both sides. [BUG 2 - Tap-Highlight Removal] (3) Terms link computed styles: user-select='none' ✅, -webkit-tap-highlight-color='rgba(0, 0, 0, 0)' ✅, (4) Privacy link computed styles: user-select='none' ✅, -webkit-tap-highlight-color='rgba(0, 0, 0, 0)' ✅, (5) Terms link navigation to /terms ✅, (6) Terms back button returns to /login ✅, (7) Privacy link navigation to /privacy ✅, (8) Privacy back button returns to /login ✅. Both bug fixes working perfectly. No gray tap-highlight box will appear on tap. Screenshots confirm visual centering."
