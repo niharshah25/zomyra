@@ -332,7 +332,7 @@ frontend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Fixed the 'two highlights at once' bug: previously the bold text was driven by the parent's selectedIndex (only updated on scroll-end) while the visual band centered on a different item mid-scroll, so the user saw two highlighted positions. Now the highlight is driven by a LOCAL `centerIndex` state that updates on every onScroll frame to the rounded scroll-position index — only ONE item is ever bold, and it's always the one in the band. Removed the debounced onScroll → onChange call that was firing mid-scroll. New flow: onScroll updates centerIndex (live highlight + selection haptic) → onMomentumScrollEnd / onScrollEndDrag commits to parent via onChange. Added scrollEventThrottle=16, snapToAlignment='start', bounces=false, overScrollMode='never', and decelerationRate='normal' on iOS / 'fast' on Android for an iOS-picker-like settle. Subtle Haptics.selectionAsync() fires on every centerIndex change (no-op on web, try/catch wrapped for Android safety). Added isUserScrolling flag so external selectedIndex changes (e.g. day clamped 31→30 when month spins to Feb) don't fight the user's gesture."
       - working: true
