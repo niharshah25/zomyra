@@ -1,15 +1,26 @@
 /**
  * Lightweight RN date picker — three wheel-like columns (Day / Month / Year).
- * Implemented via three ScrollViews with snap and a centered selection band,
- * mirroring the web Wheel.tsx behavior but with native ScrollView snapping.
+ *
+ * Snap + selection model:
+ *   - The visually-highlighted item is driven by a LOCAL `centerIndex` that
+ *     updates on every scroll frame (the item currently aligned with the
+ *     center band). This guarantees only ONE item is ever highlighted, and
+ *     it's always the one in the band — no "previous selected stays bold
+ *     while a new one becomes centered" double-highlight.
+ *   - `onChange` to the parent only fires when the scroll comes to rest
+ *     (momentum-end / drag-end + a web fallback debounce on idle scroll).
+ *   - A subtle selection haptic fires whenever the centered index changes
+ *     while scrolling (iOS picker feel).
  */
+import * as Haptics from "expo-haptics";
 import { useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/src/theme/colors";
 
 const ITEM_H = 40;
 const VISIBLE = 5;
+const PAD = Math.floor(VISIBLE / 2);
 
 function Wheel({
   values,
@@ -24,43 +35,92 @@ function Wheel({
 }) {
   const ref = useRef<ScrollView>(null);
   const lastEmitted = useRef(selectedIndex);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isUserScrolling = useRef(false);
 
+  // Live "currently centered" index — this is what gets highlighted.
+  // Initialized to the parent's selectedIndex; updated on every scroll frame.
+  const [centerIndex, setCenterIndex] = useState(selectedIndex);
+
+  // If the parent updates `selectedIndex` externally (e.g. day clamped from
+  // 31 → 30 when the user spins month to Feb), scroll to that value and
+  // sync our local centerIndex. We skip this sync while the user is
+  // actively scrolling so we don't fight the gesture.
   useEffect(() => {
     if (selectedIndex === lastEmitted.current) return;
+    if (isUserScrolling.current) return;
     ref.current?.scrollTo({ y: selectedIndex * ITEM_H, animated: true });
     lastEmitted.current = selectedIndex;
+    setCenterIndex(selectedIndex);
   }, [selectedIndex]);
 
+  const updateCenter = (y: number) => {
+    const i = Math.max(0, Math.min(values.length - 1, Math.round(y / ITEM_H)));
+    if (i !== centerIndex) {
+      setCenterIndex(i);
+      // Subtle selection haptic on every value change while scrolling.
+      // Wrapped in try/catch because Haptics is a no-op on web and
+      // can throw on some Android devices without vibrator support.
+      if (Platform.OS !== "web") {
+        Haptics.selectionAsync().catch(() => {});
+      }
+    }
+  };
+
   const commit = (y: number) => {
-    const i = Math.round(y / ITEM_H);
-    const clamped = Math.max(0, Math.min(values.length - 1, i));
-    if (clamped !== lastEmitted.current) {
-      lastEmitted.current = clamped;
-      onChange(clamped);
+    const i = Math.max(0, Math.min(values.length - 1, Math.round(y / ITEM_H)));
+    if (i !== lastEmitted.current) {
+      lastEmitted.current = i;
+      onChange(i);
     }
   };
 
   return (
     <View style={[styles.wheelWrap, { width, height: ITEM_H * VISIBLE }]}>
+      {/* Center selection band — purely cosmetic; the actual highlighted
+          value is driven by `centerIndex` below. */}
       <View pointerEvents="none" style={styles.band} />
+
       <ScrollView
         ref={ref}
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_H}
-        decelerationRate="fast"
+        snapToAlignment="start"
+        decelerationRate={Platform.OS === "ios" ? "normal" : "fast"}
+        // High event throttle so `updateCenter` runs on every frame and
+        // the highlighted text + haptic feel tight and "alive".
         scrollEventThrottle={16}
+        bounces={false}
+        overScrollMode="never"
         contentOffset={{ x: 0, y: selectedIndex * ITEM_H }}
-        onMomentumScrollEnd={(e) => commit(e.nativeEvent.contentOffset.y)}
-        onScrollEndDrag={(e) => commit(e.nativeEvent.contentOffset.y)}
+        onScrollBeginDrag={() => {
+          isUserScrolling.current = true;
+        }}
+        onMomentumScrollBegin={() => {
+          isUserScrolling.current = true;
+        }}
         onScroll={(e) => {
-          // Debounced commit — covers web where momentum events don't fire.
           const y = e.nativeEvent.contentOffset.y;
-          if (debounceRef.current) clearTimeout(debounceRef.current);
-          debounceRef.current = setTimeout(() => commit(y), 120);
+          updateCenter(y);
+          // Web fallback: native ScrollView on web doesn't reliably fire
+          // momentum events, so we commit after a short idle.
+          if (Platform.OS === "web") {
+            if (idleTimer.current) clearTimeout(idleTimer.current);
+            idleTimer.current = setTimeout(() => {
+              commit(y);
+              isUserScrolling.current = false;
+            }, 140);
+          }
+        }}
+        onScrollEndDrag={(e) => {
+          commit(e.nativeEvent.contentOffset.y);
+        }}
+        onMomentumScrollEnd={(e) => {
+          commit(e.nativeEvent.contentOffset.y);
+          isUserScrolling.current = false;
         }}
       >
-        <View style={{ height: ITEM_H * Math.floor(VISIBLE / 2) }} />
+        <View style={{ height: ITEM_H * PAD }} />
         {values.map((v, i) => (
           <View
             key={`${String(v)}-${i}`}
@@ -69,14 +129,14 @@ function Wheel({
             <Text
               style={[
                 styles.itemText,
-                i === selectedIndex && styles.itemTextActive,
+                i === centerIndex && styles.itemTextActive,
               ]}
             >
               {String(v)}
             </Text>
           </View>
         ))}
-        <View style={{ height: ITEM_H * Math.floor(VISIBLE / 2) }} />
+        <View style={{ height: ITEM_H * PAD }} />
       </ScrollView>
     </View>
   );
@@ -182,7 +242,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    top: ITEM_H * Math.floor(VISIBLE / 2),
+    top: ITEM_H * PAD,
     height: ITEM_H,
     borderTopWidth: 1,
     borderBottomWidth: 1,
