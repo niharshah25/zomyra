@@ -270,9 +270,9 @@ frontend:
 
   - task: "Phone screen — autofill country-code strip, 10-digit cap, updated message"
     implemented: true
-    working: false
+    working: true
     file: "frontend/app/phone.tsx"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
@@ -282,6 +282,12 @@ frontend:
       - working: false
         agent: "testing"
         comment: "🚨 CRITICAL BUG FOUND. Phone autofill stripping is NOT working correctly. Test results: (1) Normal 10 digits '9408265432' → '9408265432' ✓ PASS, (2) 11 digits '94082654321' → '9408265432' ✓ PASS (maxLength cap works), (3) With +91 prefix '+919408265432' → '919408265' ❌ FAIL (expected '9408265432'), (4) With 91 prefix '919408265432' → '9194082654' ❌ FAIL (expected '9408265432'). ROOT CAUSE: The maxLength={country.length} constraint is being applied BEFORE the onChangePhone stripping logic runs. When user pastes '+919408265432' (13 chars), TextInput caps it at 10 chars first → '919408265', then onChangePhone tries to strip '91' but the number is already truncated. FIX NEEDED: Remove maxLength from TextInput and handle length capping inside onChangePhone AFTER stripping the country code. Hint message works correctly."
+      - working: true
+        agent: "main"
+        comment: "Fixed the maxLength issue. Removed maxLength prop from TextInput entirely. Now onChangePhone handles the full flow: (1) strips non-digits, (2) detects and removes country dial code if present (e.g., +919408265432 → 9408265432), (3) caps at country.length (10 for India) via setPhone(raw.slice(0, country.length)). The stripping logic now runs BEFORE the length cap, fixing the autofill bug."
+      - working: true
+        agent: "testing"
+        comment: "✅ ALL 5 TESTS PASSED! Phone autofill country-code stripping is now working correctly. Test results: (1) Autofill +919408265432 → '9408265432' ✅ PASS (country code +91 stripped correctly), (2) Autofill 919408265432 → '9408265432' ✅ PASS (country code 91 stripped correctly), (3) Manual 11-digit cap 94082654321 → '9408265432' ✅ PASS (capped at 10 digits), (4) Normal 10 digits 9876543210 → '9876543210' ✅ PASS (untouched), (5) Hint message → 'We'll send a verification code to +91 9876543210.' ✅ PASS (displays correct formatted number). The fix of removing maxLength and handling capping inside onChangePhone AFTER stripping has resolved the issue completely. Feature is fully functional."
 
   - task: "SearchableSelect — no auto-keyboard on open"
     implemented: true
@@ -352,9 +358,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Phone screen — autofill country-code strip, 10-digit cap, updated message"
+    []
   stuck_tasks:
-    - "Phone screen — autofill country-code strip, 10-digit cap, updated message"
+    []
   test_all: false
   test_priority: "high_first"
 
@@ -371,3 +377,7 @@ agent_communication:
     message: "Implemented 7 additional UX polish fixes for Zomyra Expo app based on user feedback: (1) Auto-advance for single-select onboarding questions (gender, build, education, etc.), (2) Welcome screen - larger logo (56px), anchored CTAs, bold purple links with no underline, (3) Phone screen - autofill country-code stripping, 10-digit cap, updated hint messages, (4) SearchableSelect - removed auto-keyboard on open, (5) Onboarding shell - KeyboardAvoidingView, smooth animated progress bar, cross-question fade+slide transitions, (6) OptionGrid - chip-style cards with content-based width, centered and wrapped layout, (7) Treasure-map animation - slower path (1600ms), refined pulse. All tasks marked for testing."
   - agent: "testing"
     message: "Testing complete on 7 UX polish fixes. RESULTS: ✅ (1) Auto-advance working - Gender→City and Build→Education transitions confirmed, ✅ (2) Welcome screen layout correct - buttons anchored 74px from bottom at both 800px and 900px heights, logo/wordmark visible, ✅ (3) Phone screen hint messages working, 10-digit cap working, 🚨 BUT AUTOFILL STRIPPING HAS CRITICAL BUG (see details below), ✅ (4) SearchableSelect no auto-focus verified - activeElement is DIV not INPUT, ✅ (5) Onboarding shell improvements verified - KeyboardAvoidingView present, progress bar animates smoothly, transitions working, ✅ (6) OptionGrid chip styling correct - flexWrap wrap, justifyContent center, chips show check marks when selected, ✅ (7) Treasure-map verified in previous test. CRITICAL BUG FOUND: Phone autofill stripping fails because maxLength constraint is applied BEFORE onChangePhone stripping logic. When pasting '+919408265432', input caps at 10 chars → '919408265', then tries to strip '91' but number already truncated. FIX: Remove maxLength from TextInput, handle length capping inside onChangePhone AFTER stripping country code."
+  - agent: "main"
+    message: "Fixed phone autofill country-code stripping bug. Removed maxLength prop from TextInput entirely. Now onChangePhone handles the complete flow in correct order: (1) strips non-digits, (2) detects and removes country dial code if present (e.g., +919408265432 → 9408265432), (3) caps at country.length (10 for India) via setPhone(raw.slice(0, country.length)). The stripping logic now runs BEFORE the length cap, which fixes the autofill bug. Ready for re-testing."
+  - agent: "testing"
+    message: "✅ PHONE AUTOFILL FIX VERIFIED - ALL 5 TESTS PASSED! Re-tested phone screen autofill country-code stripping after main agent's fix. Test results: (1) Autofill +919408265432 → '9408265432' ✅ PASS, (2) Autofill 919408265432 → '9408265432' ✅ PASS, (3) Manual 11-digit cap 94082654321 → '9408265432' ✅ PASS, (4) Normal 10 digits 9876543210 → '9876543210' ✅ PASS, (5) Hint message displays 'We'll send a verification code to +91 9876543210.' ✅ PASS. The fix of removing maxLength and handling capping inside onChangePhone AFTER stripping has completely resolved the issue. Phone screen is now fully functional with correct autofill behavior."

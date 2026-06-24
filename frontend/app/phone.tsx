@@ -84,7 +84,6 @@ export default function PhoneScreen() {
               placeholderTextColor={colors.mutedForeground}
               autoComplete="tel"
               autoCorrect={false}
-              maxLength={country.length}
               textContentType="telephoneNumber"
               style={[styles.input, showError && { borderColor: colors.destructive }]}
             />
