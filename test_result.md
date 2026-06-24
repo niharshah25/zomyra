@@ -246,7 +246,7 @@ frontend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Added autoAdvance flag on QuestionScreen + hideNext on RenderResult. OnboardingShell honors hideNext to suppress the Continue footer. OnboardingScreen wraps set for autoAdvance screens — taps schedule handleNext() after 250ms via a single setTimeout (cleared on unmount). Flagged: gender, bodyType, education, income, diet, drinking, smoking, fitness, familyStructure (Your world), prefLocation, all 5 nn* deal-breakers. Smoke test: tap Male → 600ms later user is on city screen, Continue button hidden during transition."
       - working: true
@@ -261,7 +261,7 @@ frontend:
     priority: "medium"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Restructured into 3-zone flex layout (top brand / middle tagline+illustration / bottom auth CTAs). Logo 36→56 px, wordmark 26→36 px, lifted to top of safe area. Middle uses flex: 1 so Google/Phone CTAs stay anchored near the bottom. Terms / Privacy links restyled — removed textDecorationLine underline (RN doesn't support text-underline-offset); now bold colors.primary which is the modern Bumble/Hinge/Airbnb pattern and reads cleaner at 12 px."
       - working: true
@@ -276,7 +276,7 @@ frontend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "(1) Added onChangePhone that detects autofilled values starting with the country dial digits (e.g. +919408265432 → 919408265432 starts with 91) and strips them before storing the local 10 digits. (2) maxLength={country.length} on input as hard cap. (3) Replaced misleading hint with 'We'll send a verification code to your phone number' (and once valid: 'We'll send a verification code to +91 9408265432' with the complete number). (4) Switched autoComplete to 'tel' so SMS autofill works."
       - working: false
@@ -297,7 +297,7 @@ frontend:
     priority: "medium"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Removed autoFocus on the bottom-sheet TextInput. Tapping a SearchableSelect (city, profession etc.) opens the sheet with the list visible; the keyboard only appears when the user explicitly taps the search input."
       - working: true
@@ -312,7 +312,7 @@ frontend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Wrapped the shell in KeyboardAvoidingView (behavior: padding iOS / height Android). Progress bar width now animates via Animated.timing over 300 ms with Easing.inOut(cubic) instead of jumping instantly. Cross-question transition is now 300 ms fade + translateY (12 → 0) instead of horizontal slide — feels like a calmer card stack advance."
       - working: true
@@ -327,7 +327,7 @@ frontend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Rewrote OptionGrid from full-width buttons to chip-style pills (alignSelf flex-start, paddingHorizontal 18, paddingVertical 12, borderRadius 999, content-based width). Wrapper uses justifyContent: 'center' so odd-count rows stay centered. Press animates scale(0.97); selected shows purple border + secondary bg + inline check pill next to label. Languages screen (ChipGroup) also center-aligned."
       - working: true
@@ -342,7 +342,7 @@ frontend:
     priority: "medium"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "main"
         comment: "Slowed path 900→1600 ms (Easing.out cubic). Final-step start point fixed — for step >= 3 drawSeg1.setValue(0) immediately so it's pre-drawn, and only seg2 (checkpoint 2 → 3) animates instead of replaying from start. Active-node pulse refined: scale 1.0→1.45 with opacity 0.30→0 over 1800 ms (gentler breathing). Spring bounciness 12→10 for a calmer settle."
       - working: true
