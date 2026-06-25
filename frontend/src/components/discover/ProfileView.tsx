@@ -24,7 +24,10 @@ import type { CompatibilityTier, DiscoverProfile } from "@/src/lib/discover/mock
 const SCREEN = Dimensions.get("window");
 const SCREEN_W = Math.min(SCREEN.width, 390);
 // Cover photo takes ~35% of screen height (within the 30–40% target).
-const COVER_H = Math.round(SCREEN.height * 0.35);
+// We clamp to [260, 320] px so the cover never gets too short on small
+// devices nor too tall on web previews (where window.height can report
+// the browser window rather than the device viewport).
+const COVER_H = Math.max(260, Math.min(Math.round(SCREEN.height * 0.35), 320));
 
 type Props = {
   profile: DiscoverProfile;
