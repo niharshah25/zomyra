@@ -1,9 +1,13 @@
 /**
  * ProfileView — shared between Discover, Requests sheet, Chat profile sheet.
- * Pure RN translation of the web ProfileView.tsx; preserves layout & content.
+ * Photo-first cover header (Airbnb / Instagram style): the hero image spans
+ * the full width and ~35% of screen height, with name, age, location, and
+ * the compatibility tier badge overlaid on the bottom-left over a subtle
+ * dark gradient.
  */
+import { LinearGradient } from "expo-linear-gradient";
 import { AlertTriangle, Check, Heart, MapPin, Sparkles, X } from "lucide-react-native";
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Dimensions,
   Image,
@@ -17,7 +21,10 @@ import {
 import { colors, radii } from "@/src/theme/colors";
 import type { CompatibilityTier, DiscoverProfile } from "@/src/lib/discover/mock";
 
-const SCREEN_W = Math.min(Dimensions.get("window").width, 390);
+const SCREEN = Dimensions.get("window");
+const SCREEN_W = Math.min(SCREEN.width, 390);
+// Cover photo takes ~35% of screen height (within the 30–40% target).
+const COVER_H = Math.round(SCREEN.height * 0.35);
 
 type Props = {
   profile: DiscoverProfile;
@@ -29,21 +36,21 @@ type Props = {
 const TIER: Record<CompatibilityTier, { dot: string; chipBg: string; chipText: string; chipBorder: string }> = {
   "Excellent Match": {
     dot: "#8B5CF6",
-    chipBg: "rgba(139,92,246,0.10)",
-    chipText: "#6D28D9",
-    chipBorder: "rgba(139,92,246,0.25)",
+    chipBg: "rgba(139,92,246,0.92)",
+    chipText: "#FFFFFF",
+    chipBorder: "rgba(255,255,255,0.35)",
   },
   "Great Match": {
     dot: "#10B981",
-    chipBg: "rgba(16,185,129,0.10)",
-    chipText: "#047857",
-    chipBorder: "rgba(16,185,129,0.25)",
+    chipBg: "rgba(16,185,129,0.92)",
+    chipText: "#FFFFFF",
+    chipBorder: "rgba(255,255,255,0.35)",
   },
   "Potential Match": {
     dot: "#F59E0B",
-    chipBg: "rgba(245,158,11,0.12)",
-    chipText: "#B45309",
-    chipBorder: "rgba(245,158,11,0.30)",
+    chipBg: "rgba(245,158,11,0.92)",
+    chipText: "#FFFFFF",
+    chipBorder: "rgba(255,255,255,0.35)",
   },
 };
 
@@ -55,42 +62,49 @@ export function ProfileView({ profile, onPass, onConnect, footer }: Props) {
 
   return (
     <View style={{ paddingBottom: 8 }}>
-      {/* Hero + identity */}
-      <View style={styles.heroSection}>
-        <View style={styles.heroRow}>
-          <View style={styles.heroImageWrap}>
-            <Image source={{ uri: profile.hero }} style={styles.heroImage} />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={styles.name} numberOfLines={1}>
-              {profile.name}, {profile.age}
+      {/* ============ COVER PHOTO HEADER ============ */}
+      <View style={styles.cover}>
+        <Image source={{ uri: profile.hero }} style={styles.coverImage} />
+        {/* Subtle dark gradient (transparent → 70% black) only along the
+            bottom half so the rest of the photo stays vibrant. */}
+        <LinearGradient
+          pointerEvents="none"
+          colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.15)", "rgba(0,0,0,0.72)"]}
+          locations={[0, 0.45, 1]}
+          style={styles.coverGradient}
+        />
+        {/* Match tier chip sits just above the identity block. */}
+        <View style={styles.coverContent}>
+          <View
+            style={[
+              styles.tierChip,
+              { backgroundColor: tier.chipBg, borderColor: tier.chipBorder },
+            ]}
+          >
+            <View style={[styles.tierDot, { backgroundColor: "#fff" }]} />
+            <Text style={[styles.tierLabel, { color: tier.chipText }]}>
+              {profile.compatibility}
             </Text>
-            <View style={styles.metaRow}>
-              <MapPin size={13} color={colors.mutedForeground} />
-              <Text style={styles.metaText} numberOfLines={1}>
-                {profile.location}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.tierChip,
-                { backgroundColor: tier.chipBg, borderColor: tier.chipBorder },
-              ]}
-            >
-              <View style={[styles.tierDot, { backgroundColor: tier.dot }]} />
-              <Text style={[styles.tierLabel, { color: tier.chipText }]}>
-                {profile.compatibility}
-              </Text>
-            </View>
+          </View>
+          <Text style={styles.coverName} numberOfLines={1}>
+            {profile.name}, {profile.age}
+          </Text>
+          <View style={styles.coverMetaRow}>
+            <MapPin size={14} color="rgba(255,255,255,0.95)" strokeWidth={2.4} />
+            <Text style={styles.coverMetaText} numberOfLines={1}>
+              {profile.location}
+            </Text>
           </View>
         </View>
       </View>
 
-      {/* Summary */}
-      <Section icon={<Sparkles size={11} color={colors.mutedForeground} />} title="Why we think you'll get along">
-        <Text style={styles.bodyText} numberOfLines={4}>
-          {profile.summary}
-        </Text>
+      {/* ============ COMPATIBILITY-FIRST CONTENT ============ */}
+      <Section
+        icon={<Sparkles size={11} color={colors.mutedForeground} />}
+        title="Why we think you'll get along"
+        firstSection
+      >
+        <Text style={styles.bodyText}>{profile.summary}</Text>
       </Section>
 
       {/* Lifestyle */}
@@ -240,13 +254,15 @@ function Section({
   title,
   icon,
   children,
+  firstSection,
 }: {
   title: string;
   icon?: ReactNode;
   children: ReactNode;
+  firstSection?: boolean;
 }) {
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, firstSection && { marginTop: 20 }]}>
       <View style={styles.sectionLabelRow}>
         {icon}
         <Text style={styles.sectionLabel}>{title.toUpperCase()}</Text>
@@ -257,38 +273,70 @@ function Section({
 }
 
 const styles = StyleSheet.create({
-  heroSection: { paddingHorizontal: 16, paddingTop: 4 },
-  heroRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  heroImageWrap: {
-    width: 112,
-    height: 140,
-    borderRadius: 18,
+  // ---- Cover photo header ----
+  cover: {
+    width: "100%",
+    height: COVER_H,
     backgroundColor: colors.secondary,
     overflow: "hidden",
+    position: "relative",
   },
-  heroImage: { width: "100%", height: "100%" },
-  name: {
-    fontSize: 19,
-    fontWeight: "700",
-    color: colors.foreground,
-    letterSpacing: -0.3,
+  coverImage: {
+    width: "100%",
+    height: "100%",
   },
-  metaRow: { marginTop: 4, flexDirection: "row", alignItems: "center", gap: 4 },
-  metaText: { fontSize: 12, color: colors.mutedForeground },
-  tierChip: {
+  coverGradient: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: 0,
+  },
+  coverContent: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 18,
+  },
+  coverName: {
     marginTop: 8,
+    fontSize: 30,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.6,
+    textShadowColor: "rgba(0,0,0,0.35)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
+  },
+  coverMetaRow: {
+    marginTop: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  coverMetaText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.95)",
+    textShadowColor: "rgba(0,0,0,0.35)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  tierChip: {
     alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
   },
   tierDot: { width: 6, height: 6, borderRadius: 999 },
-  tierLabel: { fontSize: 10.5, fontWeight: "700" },
-  section: { marginTop: 16, paddingHorizontal: 16 },
+  tierLabel: { fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
+
+  // ---- Sections ----
+  section: { marginTop: 18, paddingHorizontal: 16 },
   sectionLabelRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   sectionLabel: {
     fontSize: 10,
@@ -297,8 +345,8 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
   },
   bodyText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 13.5,
+    lineHeight: 20,
     color: colors.foreground,
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
