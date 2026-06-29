@@ -74,6 +74,10 @@ export type OnboardingState = {
   nnHousehold: "Vegetarian Household Only" | "Flexible Household" | "No Preference" | "";
   nnRelocation: "Yes" | "No" | "Depends on Circumstances" | "";
   scales: Record<string, number>;
+  /** Optional self-written About Me. If empty, ProfileView falls back to the auto-generated summary. */
+  bio: string;
+  /** User-uploaded photos as base64 data URIs (first one acts as the primary/hero photo). */
+  photos: string[];
 };
 
 export const defaultOnboardingState: OnboardingState = {
@@ -111,6 +115,8 @@ export const defaultOnboardingState: OnboardingState = {
   nnHousehold: "",
   nnRelocation: "",
   scales: {},
+  bio: "",
+  photos: [],
 };
 
 export const STORAGE_KEY = "zomyra.onboarding.v1";

@@ -152,7 +152,7 @@ export default function ProfileScreen() {
             iconColor={PURPLE}
             title="Edit profile"
             subtitle="Update your photos, details & preferences"
-            onPress={() => router.push("/onboarding" as never)}
+            onPress={() => router.push("/edit-profile" as never)}
           />
           <Divider />
           <ActionRow
