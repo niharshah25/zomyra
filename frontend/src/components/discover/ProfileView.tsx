@@ -1,465 +1,753 @@
 /**
- * ProfileView — shared between Discover, Requests sheet, Chat profile sheet.
- * Photo-first cover header (Airbnb / Instagram style): the hero image spans
- * the full width and ~35% of screen height, with name, age, location, and
- * the compatibility tier badge overlaid on the bottom-left over a subtle
- * dark gradient.
+ * ProfileView — Premium matrimony layout (Apple + Hinge + Airbnb inspired).
+ *
+ * Interleaved photo + info cards in a single vertical column.
+ * Tokens: PURPLE #5B2C6F · LIGHT_PURPLE #F5F3FF · BORDER #ECEAF7 ·
+ *         TEXT #111827 · MUTED #6B7280.
+ * Card radius 24, soft 0/8/24 rgba(0,0,0,0.06) shadow, 8-pt spacing.
  */
-import { LinearGradient } from "expo-linear-gradient";
-import { AlertTriangle, Check, Heart, MapPin, Sparkles, X } from "lucide-react-native";
-import { useState, type ReactNode } from "react";
+import {
+  Briefcase,
+  Cigarette,
+  CigaretteOff,
+  Dumbbell,
+  Heart,
+  HeartHandshake,
+  Home,
+  IndianRupee,
+  Info,
+  Landmark,
+  Languages as LanguagesIcon,
+  Leaf,
+  MapPin,
+  Plane,
+  Sparkles,
+  UserRound,
+  Wine,
+  X,
+  type LucideIcon,
+} from "lucide-react-native";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Dimensions,
   Image,
+  Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
-import { colors, radii } from "@/src/theme/colors";
-import type { CompatibilityTier, DiscoverProfile } from "@/src/lib/discover/mock";
+import type { CompatibilityDimension, DiscoverProfile } from "@/src/lib/discover/mock";
 
 const SCREEN = Dimensions.get("window");
-const SCREEN_W = Math.min(SCREEN.width, 390);
-// Cover photo takes ~35% of screen height (within the 30–40% target).
-// We clamp to [260, 320] px so the cover never gets too short on small
-// devices nor too tall on web previews (where window.height can report
-// the browser window rather than the device viewport).
-const COVER_H = Math.max(260, Math.min(Math.round(SCREEN.height * 0.35), 320));
+const SCREEN_W = Math.min(SCREEN.width, 430);
+const SCREEN_H_FULL = SCREEN.height;
+const PAD_X = 16; // 8-pt grid
+const CARD_W = SCREEN_W - PAD_X * 2;
+
+// ───── Design tokens ─────
+const PURPLE = "#5B2C6F";
+const LIGHT_PURPLE = "#F5F3FF";
+const BORDER = "#ECEAF7";
+const TEXT = "#111827";
+const MUTED = "#6B7280";
+
+const PROMPTS = [
+  "Let's talk about hidden cafes ☕️",
+  "Collecting sunsets whenever I can 🌅",
+  "Chai talks and long drives ☕️🚗",
+  "Slow Sundays and good books 📖",
+  "Looking for my plus-one for adventures ✨",
+];
+
+// Lifestyle → icon
+const LIFESTYLE_ICONS: Record<string, LucideIcon> = {
+  Vegetarian: Leaf,
+  "Non-Smoker": CigaretteOff,
+  "Non-smoker": CigaretteOff,
+  "Social Drinker": Wine,
+  "Occasional Drinker": Wine,
+  "Non-Drinker": Wine,
+  "Eats Everything": Leaf,
+  "Active Lifestyle": Dumbbell,
+  Runner: Dumbbell,
+  Yoga: Dumbbell,
+  "Pet Lover": Heart,
+  Creative: Sparkles,
+  Spiritual: Sparkles,
+  "Career Focused": Briefcase,
+  "Family Oriented": Home,
+};
+
+// What we align on → icon
+const ALIGN_ICONS: Record<string, LucideIcon> = {
+  "Both want children": UserRound,
+  "Similar household expectations": Home,
+  "Open to relocation": Plane,
+  "Open to relocate": Plane,
+  "Different views on interfaith marriage": HeartHandshake,
+  "Open to interfaith marriage": HeartHandshake,
+  "Interfaith Marriage": HeartHandshake,
+  "Aligned on financial discipline": Briefcase,
+  "Different household expectations": Home,
+  "Different career intensity": Briefcase,
+  "Different relocation preferences": Plane,
+  "Comfortable with smoking": Cigarette,
+  "Comfortable with Smoking": Cigarette,
+  "Vegetarian household": Leaf,
+  "Vegetarian Household": Leaf,
+};
+
+const DIMENSION_TITLE: Record<CompatibilityDimension, string> = {
+  all: "Why we think you'll get along",
+  lifestyle: "How your lifestyles align",
+  personality: "How your personalities align",
+  priorities: "How your priorities align",
+};
+
+function findFact(profile: DiscoverProfile, label: string): string | undefined {
+  return profile.facts.find((f) => f.label.toLowerCase() === label.toLowerCase())
+    ?.value;
+}
 
 type Props = {
   profile: DiscoverProfile;
+  dimension?: CompatibilityDimension;
   onPass?: () => void;
   onConnect?: () => void;
-  footer?: ReactNode;
 };
 
-const TIER: Record<CompatibilityTier, { dot: string; chipBg: string; chipText: string; chipBorder: string }> = {
-  "Excellent Match": {
-    dot: "#8B5CF6",
-    chipBg: "rgba(139,92,246,0.92)",
-    chipText: "#FFFFFF",
-    chipBorder: "rgba(255,255,255,0.35)",
-  },
-  "Great Match": {
-    dot: "#10B981",
-    chipBg: "rgba(16,185,129,0.92)",
-    chipText: "#FFFFFF",
-    chipBorder: "rgba(255,255,255,0.35)",
-  },
-  "Potential Match": {
-    dot: "#F59E0B",
-    chipBg: "rgba(245,158,11,0.92)",
-    chipText: "#FFFFFF",
-    chipBorder: "rgba(255,255,255,0.35)",
-  },
-};
+export function ProfileView({ profile, dimension = "all", onPass, onConnect }: Props) {
+  const [viewerPhoto, setViewerPhoto] = useState<string | null>(null);
+  const [showReason, setShowReason] = useState(false);
 
-export function ProfileView({ profile, onPass, onConnect, footer }: Props) {
-  const tier = TIER[profile.compatibility];
-  const [galleryIdx, setGalleryIdx] = useState(0);
-  const galleryW = SCREEN_W - 32; // padding 16 each side
-  const itemW = galleryW * 0.78;
+  const prompts = useMemo(() => {
+    const arr = [...PROMPTS];
+    const seed = profile.id
+      .split("")
+      .reduce((a, c) => a + c.charCodeAt(0), 0);
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = (seed * (i + 1)) % (i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [profile.id]);
+
+  const dimScore = profile.scores?.[dimension];
+  const reason = dimScore?.reason ?? profile.matchReason;
+  const reasonTitle = DIMENSION_TITLE[dimension];
+
+  const photos = useMemo(() => {
+    const list = [profile.hero, ...profile.gallery];
+    while (list.length < 3) list.push(profile.hero);
+    return list.slice(0, 4);
+  }, [profile.hero, profile.gallery]);
+
+  const height = profile.height ?? findFact(profile, "Height") ?? "—";
+  const build = profile.build ?? "—";
+  const education = findFact(profile, "Education") ?? "—";
+  const family = findFact(profile, "Family") ?? "—";
+  const profession = findFact(profile, "Profession") ?? "—";
+  const income = profile.income ?? findFact(profile, "Income") ?? "—";
+  const languages = findFact(profile, "Languages") ?? "—";
+  const religion = profile.religion ?? "—";
+
+  const lifestyle = profile.lifestyle.slice(0, 6);
+  const alignedItems = profile.snapshot;
 
   return (
-    <View style={{ paddingBottom: 8 }}>
-      {/* ============ COVER PHOTO HEADER ============ */}
-      <View style={styles.cover}>
-        <Image source={{ uri: profile.hero }} style={styles.coverImage} />
-        {/* Subtle dark gradient (transparent → 70% black) only along the
-            bottom half so the rest of the photo stays vibrant. */}
-        <LinearGradient
-          pointerEvents="none"
-          colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.15)", "rgba(0,0,0,0.72)"]}
-          locations={[0, 0.45, 1]}
-          style={styles.coverGradient}
-        />
-        {/* Match tier chip sits just above the identity block. */}
-        <View style={styles.coverContent}>
-          <View
-            style={[
-              styles.tierChip,
-              { backgroundColor: tier.chipBg, borderColor: tier.chipBorder },
-            ]}
-          >
-            <View style={[styles.tierDot, { backgroundColor: "#fff" }]} />
-            <Text style={[styles.tierLabel, { color: tier.chipText }]}>
-              {profile.compatibility}
-            </Text>
-          </View>
-          <Text style={styles.coverName} numberOfLines={1}>
+    <View style={{ paddingBottom: 16 }}>
+      {/* ── Identity header ── */}
+      <View style={styles.identityRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.identityName} numberOfLines={1}>
             {profile.name}, {profile.age}
           </Text>
-          <View style={styles.coverMetaRow}>
-            <MapPin size={14} color="rgba(255,255,255,0.95)" strokeWidth={2.4} />
-            <Text style={styles.coverMetaText} numberOfLines={1}>
+          <View style={styles.identityLocRow}>
+            <MapPin size={14} color={MUTED} strokeWidth={2} />
+            <Text style={styles.identityLoc} numberOfLines={1}>
               {profile.location}
             </Text>
           </View>
         </View>
+        <Pressable
+          testID="discover-tier-chip"
+          onPress={() => setShowReason(true)}
+          style={({ pressed }) => [styles.refreshDot, pressed && { opacity: 0.7 }]}
+          hitSlop={8}
+        >
+          <Sparkles size={18} color={PURPLE} strokeWidth={2} />
+        </Pressable>
       </View>
 
-      {/* ============ COMPATIBILITY-FIRST CONTENT ============ */}
-      <Section
-        icon={<Sparkles size={11} color={colors.mutedForeground} />}
-        title="Why we think you'll get along"
-        firstSection
-      >
-        <Text style={styles.bodyText}>{profile.summary}</Text>
-      </Section>
+      <Prompt text={prompts[0]} />
 
-      {/* Lifestyle */}
-      <Section title="Lifestyle">
-        <View style={styles.chipRow}>
-          {profile.lifestyle.map((t) => (
-            <View key={t} style={styles.lifestyleChip}>
-              <Text style={styles.lifestyleText}>{t}</Text>
-            </View>
-          ))}
-        </View>
-      </Section>
+      <PhotoCard
+        uri={photos[0]}
+        testID="discover-photo-0"
+        onOpen={() => setViewerPhoto(photos[0])}
+        onPass={onPass}
+        onConnect={onConnect}
+      />
 
-      {/* Snapshot */}
-      <Section title="Compatibility snapshot">
-        <View style={{ gap: 6 }}>
-          {profile.snapshot.map((s) => {
-            const isMatch = s.kind === "match";
+      <InfoCard kicker="ABOUT ME" Icon={UserRound} testID="discover-about">
+        <Text style={styles.cardBody}>{profile.summary}</Text>
+      </InfoCard>
+
+      <Prompt text={prompts[1]} />
+
+      <PhotoCard
+        uri={photos[1]}
+        testID="discover-photo-1"
+        onOpen={() => setViewerPhoto(photos[1])}
+        onPass={onPass}
+        onConnect={onConnect}
+      />
+
+      <InfoCard kicker="LIFESTYLE" Icon={Leaf} testID="discover-lifestyle">
+        <View style={styles.lifestyleGrid}>
+          {lifestyle.map((label) => {
+            const I = LIFESTYLE_ICONS[label] ?? Sparkles;
             return (
-              <View
-                key={s.label}
-                style={[
-                  styles.snapshotItem,
-                  {
-                    backgroundColor: isMatch ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.10)",
-                    borderColor: isMatch ? "rgba(16,185,129,0.25)" : "rgba(245,158,11,0.30)",
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.snapshotIcon,
-                    { backgroundColor: isMatch ? "#10B981" : "#F59E0B" },
-                  ]}
-                >
-                  {isMatch ? (
-                    <Check size={10} color="#fff" strokeWidth={3} />
-                  ) : (
-                    <AlertTriangle size={10} color="#fff" strokeWidth={2.8} />
-                  )}
-                </View>
-                <Text style={styles.snapshotText}>{s.label}</Text>
+              <View key={label} style={styles.lifestyleItem}>
+                <I size={18} color={PURPLE} strokeWidth={2} />
+                <Text style={styles.lifestyleText} numberOfLines={1}>
+                  {label}
+                </Text>
               </View>
             );
           })}
         </View>
-      </Section>
+      </InfoCard>
 
-      {/* More photos */}
-      <View style={{ marginTop: 16 }}>
-        <View style={{ paddingHorizontal: 16 }}>
-          <Text style={styles.sectionLabel}>MORE PHOTOS</Text>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, gap: 8 }}
-          snapToInterval={itemW + 8}
-          decelerationRate="fast"
-          onMomentumScrollEnd={(e) => {
-            const x = e.nativeEvent.contentOffset.x;
-            const idx = Math.round(x / (itemW + 8));
-            setGalleryIdx(Math.max(0, Math.min(profile.gallery.length - 1, idx)));
-          }}
+      <Prompt text={prompts[2]} />
+
+      <PhotoCard
+        uri={photos[2]}
+        testID="discover-photo-2"
+        onOpen={() => setViewerPhoto(photos[2])}
+        onPass={onPass}
+        onConnect={onConnect}
+        highlightLike
+      />
+
+      {alignedItems.length > 0 ? (
+        <InfoCard
+          kicker="WHAT WE ALIGN ON"
+          Icon={HeartHandshake}
+          testID="discover-align"
         >
-          {profile.gallery.map((src, i) => (
-            <View
-              key={i}
-              style={{
-                width: itemW,
-                aspectRatio: 4 / 5,
-                borderRadius: 14,
-                overflow: "hidden",
-                backgroundColor: colors.secondary,
-              }}
-            >
-              <Image source={{ uri: src }} style={{ width: "100%", height: "100%" }} />
-            </View>
-          ))}
-        </ScrollView>
-        <View style={styles.dots}>
-          {profile.gallery.map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i === galleryIdx && { width: 14, backgroundColor: colors.primary },
-              ]}
-            />
-          ))}
-        </View>
-      </View>
+          <View style={styles.lifestyleGrid}>
+            {alignedItems.map((s) => {
+              const I = ALIGN_ICONS[s.label] ?? Heart;
+              return (
+                <View key={s.label} style={styles.lifestyleItem}>
+                  <I size={18} color={PURPLE} strokeWidth={2} />
+                  <Text style={styles.lifestyleText} numberOfLines={2}>
+                    {s.label}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </InfoCard>
+      ) : null}
 
-      {/* Values */}
-      <Section title="Values & relationship style">
-        <View style={styles.factsGrid}>
-          {profile.values.map((v) => (
-            <View key={v} style={styles.valueCard}>
-              <View style={styles.valueCheck}>
-                <Check size={10} color={colors.primary} strokeWidth={3} />
-              </View>
-              <Text style={styles.valueText} numberOfLines={1}>
-                {v}
+      <StaticCard kicker="QUICK FACTS" Icon={Info} testID="discover-quick-facts">
+        <View style={styles.factsRow}>
+          <Fact value={height} label="Height" />
+          <Fact value={build} label="Build" />
+          <Fact value={education} label="Education" />
+          <Fact value={family} label="Family" />
+        </View>
+      </StaticCard>
+
+      <StaticCard
+        kicker="PROFESSION & INCOME"
+        Icon={Briefcase}
+        testID="discover-profession-income"
+      >
+        <View style={styles.factsRow}>
+          <FactWithIcon Icon={Briefcase} value={profession} label="Profession" />
+          <FactWithIcon Icon={IndianRupee} value={income} label="Income" />
+        </View>
+      </StaticCard>
+
+      <StaticCard
+        kicker="LANGUAGES & RELIGION"
+        Icon={LanguagesIcon}
+        testID="discover-lang-religion"
+      >
+        <View style={styles.factsRow}>
+          <FactWithIcon Icon={LanguagesIcon} value={languages} label="Languages" />
+          <FactWithIcon Icon={Landmark} value={religion} label="Religion" />
+        </View>
+      </StaticCard>
+
+      {/* Match-reason modal */}
+      <Modal
+        visible={showReason}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowReason(false)}
+        statusBarTranslucent
+      >
+        <Pressable
+          style={styles.reasonBackdrop}
+          onPress={() => setShowReason(false)}
+        >
+          <Pressable style={styles.reasonCard} onPress={() => {}}>
+            <View style={styles.reasonChip}>
+              <Sparkles size={12} color="#FFF" strokeWidth={2.6} />
+              <Text style={styles.reasonChipText}>
+                {dimScore?.tier ?? profile.compatibility}
               </Text>
             </View>
-          ))}
-        </View>
-      </Section>
-
-      {/* Quick facts */}
-      <Section title="Quick facts">
-        <View style={styles.factsGrid}>
-          {profile.facts.map((f) => (
-            <View key={f.label} style={styles.factCard}>
-              <Text style={styles.factLabel}>{f.label.toUpperCase()}</Text>
-              <Text style={styles.factValue}>{f.value}</Text>
-            </View>
-          ))}
-        </View>
-      </Section>
-
-      {footer ? (
-        <View style={{ marginTop: 16, paddingHorizontal: 16, paddingBottom: 8 }}>{footer}</View>
-      ) : onPass && onConnect ? (
-        <View style={styles.actionsRow}>
-          <Pressable
-            testID="discover-pass"
-            onPress={onPass}
-            style={({ pressed }) => [styles.passBtn, pressed && { transform: [{ scale: 0.96 }] }]}
-          >
-            <X size={20} color={colors.foreground} strokeWidth={2.4} />
+            <Text style={styles.reasonTitle}>{reasonTitle}</Text>
+            <Text style={styles.reasonBody}>{reason}</Text>
+            <Pressable
+              onPress={() => setShowReason(false)}
+              style={({ pressed }) => [
+                styles.reasonCloseBtn,
+                pressed && { opacity: 0.9 },
+              ]}
+            >
+              <Text style={styles.reasonCloseText}>Got it</Text>
+            </Pressable>
           </Pressable>
-          <Pressable
-            testID="discover-connect"
-            onPress={onConnect}
-            style={({ pressed }) => [styles.connectBtn, pressed && { transform: [{ scale: 0.96 }] }]}
+        </Pressable>
+      </Modal>
+
+      {/* Full-screen photo viewer */}
+      <Modal
+        visible={!!viewerPhoto}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewerPhoto(null)}
+        statusBarTranslucent
+      >
+        <View style={styles.viewerRoot}>
+          <TouchableOpacity
+            testID="photo-viewer-close"
+            onPress={() => setViewerPhoto(null)}
+            style={styles.viewerClose}
+            activeOpacity={0.8}
           >
-            <Heart size={20} color="#fff" fill="#fff" />
-          </Pressable>
+            <X size={22} color="#FFF" strokeWidth={2} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setViewerPhoto(null)}
+            style={styles.viewerBackdrop}
+          >
+            {viewerPhoto ? (
+              <Image
+                source={{ uri: viewerPhoto }}
+                style={styles.viewerImage}
+                resizeMode="contain"
+              />
+            ) : null}
+          </TouchableOpacity>
         </View>
-      ) : null}
+      </Modal>
     </View>
   );
 }
 
-function Section({
-  title,
-  icon,
-  children,
-  firstSection,
+// ──────────────────────────── helpers ────────────────────────────
+
+function Prompt({ text }: { text: string }) {
+  return (
+    <Text style={styles.prompt} numberOfLines={2}>
+      {text}
+    </Text>
+  );
+}
+
+function PhotoCard({
+  uri,
+  onOpen,
+  onPass,
+  onConnect,
+  highlightLike,
+  testID,
 }: {
-  title: string;
-  icon?: ReactNode;
-  children: ReactNode;
-  firstSection?: boolean;
+  uri: string;
+  onOpen?: () => void;
+  onPass?: () => void;
+  onConnect?: () => void;
+  highlightLike?: boolean;
+  testID?: string;
 }) {
   return (
-    <View style={[styles.section, firstSection && { marginTop: 20 }]}>
-      <View style={styles.sectionLabelRow}>
-        {icon}
-        <Text style={styles.sectionLabel}>{title.toUpperCase()}</Text>
+    <View style={styles.photoCardWrap}>
+      <TouchableOpacity
+        activeOpacity={0.95}
+        onPress={onOpen}
+        style={styles.photoCard}
+        testID={testID}
+      >
+        <Image source={{ uri }} style={styles.photoImg} />
+      </TouchableOpacity>
+      <Pressable
+        testID={`${testID}-pass`}
+        onPress={onPass}
+        style={({ pressed }) => [
+          styles.photoActionLeft,
+          pressed && { transform: [{ scale: 0.94 }] },
+        ]}
+        hitSlop={6}
+      >
+        <X size={22} color={TEXT} strokeWidth={2} />
+      </Pressable>
+      <Pressable
+        testID={`${testID}-like`}
+        onPress={onConnect}
+        style={({ pressed }) => [
+          styles.photoActionRight,
+          highlightLike && styles.photoActionRightHi,
+          pressed && { transform: [{ scale: 0.94 }] },
+        ]}
+        hitSlop={6}
+      >
+        <Heart
+          size={22}
+          color={PURPLE}
+          fill={highlightLike ? PURPLE : "transparent"}
+          strokeWidth={2}
+        />
+      </Pressable>
+    </View>
+  );
+}
+
+function InfoCard({
+  kicker,
+  Icon,
+  children,
+  testID,
+}: {
+  kicker: string;
+  Icon: LucideIcon;
+  children: ReactNode;
+  testID?: string;
+}) {
+  const [liked, setLiked] = useState(false);
+  return (
+    <View style={styles.infoCard} testID={testID}>
+      <View style={styles.infoHeaderRow}>
+        <Icon size={14} color={PURPLE} strokeWidth={2} />
+        <Text style={styles.kicker}>{kicker}</Text>
+        <View style={{ flex: 1 }} />
+        <Pressable
+          onPress={() => setLiked((v) => !v)}
+          hitSlop={10}
+          testID={`${testID}-like`}
+          style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+        >
+          <Heart
+            size={18}
+            color={PURPLE}
+            fill={liked ? PURPLE : "transparent"}
+            strokeWidth={2}
+          />
+        </Pressable>
       </View>
-      <View style={{ marginTop: 6 }}>{children}</View>
+      <View style={{ marginTop: 8 }}>{children}</View>
+    </View>
+  );
+}
+
+function StaticCard({
+  kicker,
+  Icon,
+  children,
+  testID,
+}: {
+  kicker: string;
+  Icon: LucideIcon;
+  children: ReactNode;
+  testID?: string;
+}) {
+  return (
+    <View style={[styles.infoCard, styles.collapsibleCard]} testID={testID}>
+      <View style={styles.infoHeaderRow}>
+        <Icon size={14} color={PURPLE} strokeWidth={2} />
+        <Text style={styles.kicker}>{kicker}</Text>
+      </View>
+      <View style={{ marginTop: 12 }}>{children}</View>
+    </View>
+  );
+}
+
+function Fact({ value, label }: { value: string; label: string }) {
+  return (
+    <View style={styles.factItem}>
+      <Text style={styles.factValue} numberOfLines={2}>
+        {value}
+      </Text>
+      <Text style={styles.factLabel} numberOfLines={1}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function FactWithIcon({
+  Icon,
+  value,
+  label,
+}: {
+  Icon: LucideIcon;
+  value: string;
+  label: string;
+}) {
+  return (
+    <View style={styles.factItem}>
+      <View style={styles.factIconRow}>
+        <Icon size={14} color={PURPLE} strokeWidth={2} />
+        <Text style={styles.factValue} numberOfLines={2}>
+          {value}
+        </Text>
+      </View>
+      <Text style={styles.factLabel} numberOfLines={1}>
+        {label}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // ---- Cover photo header ----
-  cover: {
-    width: "100%",
-    height: COVER_H,
-    backgroundColor: colors.secondary,
-    overflow: "hidden",
-    position: "relative",
-  },
-  coverImage: {
-    width: "100%",
-    height: "100%",
-  },
-  coverGradient: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    top: 0,
-  },
-  coverContent: {
-    position: "absolute",
-    left: 20,
-    right: 20,
-    bottom: 18,
-  },
-  coverName: {
-    marginTop: 8,
-    fontSize: 30,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: -0.6,
-    textShadowColor: "rgba(0,0,0,0.35)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
-  },
-  coverMetaRow: {
-    marginTop: 4,
+  // Identity
+  identityRow: {
+    paddingHorizontal: PAD_X,
+    paddingTop: 8,
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 12,
   },
-  coverMetaText: {
+  identityName: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: TEXT,
+    letterSpacing: -0.5,
+  },
+  identityLocRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+  },
+  identityLoc: { fontSize: 13, color: MUTED, fontWeight: "500" },
+  refreshDot: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: LIGHT_PURPLE,
+    borderWidth: 1,
+    borderColor: BORDER,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // Prompts
+  prompt: {
+    paddingHorizontal: PAD_X,
+    marginTop: 24,
+    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: "600",
+    color: TEXT,
+    letterSpacing: -0.3,
+  },
+
+  // Photo card
+  photoCardWrap: { paddingHorizontal: PAD_X, marginTop: 8 },
+  photoCard: {
+    width: CARD_W,
+    height: Math.round(CARD_W * 1.0),
+    borderRadius: 24,
+    overflow: "hidden",
+    backgroundColor: LIGHT_PURPLE,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+  photoImg: { width: "100%", height: "100%" },
+  photoActionLeft: {
+    position: "absolute",
+    left: PAD_X + 16,
+    bottom: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  photoActionRight: {
+    position: "absolute",
+    right: PAD_X + 16,
+    bottom: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  photoActionRightHi: { borderWidth: 2, borderColor: PURPLE },
+
+  // Info card
+  infoCard: {
+    marginTop: 16,
+    marginHorizontal: PAD_X,
+    backgroundColor: LIGHT_PURPLE,
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 2,
+  },
+  collapsibleCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: BORDER,
+  },
+  infoHeaderRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  kicker: {
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 1,
+    color: PURPLE,
+    textTransform: "uppercase",
+  },
+  cardBody: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "400",
+    color: TEXT,
+  },
+
+  // Lifestyle / align grid
+  lifestyleGrid: { flexDirection: "row", flexWrap: "wrap" },
+  lifestyleItem: {
+    width: "50%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+    paddingRight: 8,
+  },
+  lifestyleText: {
     fontSize: 14,
     fontWeight: "500",
-    color: "rgba(255,255,255,0.95)",
-    textShadowColor: "rgba(0,0,0,0.35)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    color: TEXT,
+    flexShrink: 1,
   },
-  tierChip: {
+
+  // Quick facts
+  factsRow: { flexDirection: "row", flexWrap: "wrap" },
+  factItem: {
+    width: "50%",
+    paddingVertical: 8,
+    paddingRight: 8,
+  },
+  factIconRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  factValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: TEXT,
+    flexShrink: 1,
+  },
+  factLabel: {
+    marginTop: 2,
+    fontSize: 13,
+    fontWeight: "400",
+    color: MUTED,
+  },
+
+  // Reason modal
+  reasonBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(17,24,39,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  reasonCard: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: "#FFF",
+    borderRadius: 24,
+    padding: 24,
+    gap: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 14,
+  },
+  reasonChip: {
     alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 999,
-    borderWidth: 1,
+    backgroundColor: PURPLE,
   },
-  tierDot: { width: 6, height: 6, borderRadius: 999 },
-  tierLabel: { fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
+  reasonChipText: { color: "#FFF", fontSize: 11, fontWeight: "700" },
+  reasonTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: TEXT,
+    letterSpacing: -0.3,
+  },
+  reasonBody: { fontSize: 16, lineHeight: 24, color: TEXT, fontWeight: "400" },
+  reasonCloseBtn: {
+    marginTop: 8,
+    alignSelf: "flex-end",
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 18,
+    backgroundColor: PURPLE,
+  },
+  reasonCloseText: { color: "#FFF", fontSize: 14, fontWeight: "600" },
 
-  // ---- Sections ----
-  section: { marginTop: 18, paddingHorizontal: 16 },
-  sectionLabelRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  sectionLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    color: colors.mutedForeground,
-  },
-  bodyText: {
-    fontSize: 13.5,
-    lineHeight: 20,
-    color: colors.foreground,
-  },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  lifestyleChip: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+  // Photo viewer
+  viewerRoot: { flex: 1, backgroundColor: "#000" },
+  viewerBackdrop: { flex: 1, alignItems: "center", justifyContent: "center" },
+  viewerImage: { width: SCREEN_W, height: SCREEN_H_FULL * 0.85 },
+  viewerClose: {
+    position: "absolute",
+    top: 48,
+    right: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  lifestyleText: { fontSize: 11, fontWeight: "600", color: colors.foreground },
-  snapshotItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  snapshotIcon: {
-    width: 16,
-    height: 16,
-    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.18)",
     alignItems: "center",
     justifyContent: "center",
-  },
-  snapshotText: { fontSize: 12.5, fontWeight: "600", color: colors.foreground, flex: 1 },
-  dots: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 4,
-    marginTop: 6,
-  },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: colors.border,
-  },
-  factsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  valueCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    width: "48.5%",
-  },
-  valueCheck: {
-    width: 16,
-    height: 16,
-    borderRadius: 6,
-    backgroundColor: colors.secondary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  valueText: { fontSize: 12, fontWeight: "600", color: colors.foreground, flex: 1 },
-  factCard: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    width: "48.5%",
-  },
-  factLabel: {
-    fontSize: 9.5,
-    fontWeight: "700",
-    letterSpacing: 1,
-    color: colors.mutedForeground,
-  },
-  factValue: { marginTop: 2, fontSize: 12, fontWeight: "600", color: colors.foreground },
-  actionsRow: {
-    marginTop: 20,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 18,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  passBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  connectBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.primary,
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
   },
 });
-
-void radii;

@@ -72,6 +72,18 @@ export default function Login() {
             </Text>
             .
           </Text>
+
+          {/* ────────────────────────────────────────────────────────────── */}
+          {/* TEMPORARY: dev skip — jumps straight to Discover, bypassing  */}
+          {/* phone/otp/onboarding/verify/matching. REMOVE before launch.  */}
+          {/* ────────────────────────────────────────────────────────────── */}
+          <Pressable
+            testID="login-dev-skip"
+            onPress={() => router.replace("/discover")}
+            style={({ pressed }) => [styles.devSkipBtn, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={styles.devSkipText}>[DEV] Skip to Discover →</Text>
+          </Pressable>
         </View>
       </View>
     </SafeAreaView>
@@ -189,4 +201,22 @@ const styles = StyleSheet.create({
       default: {},
     }),
   } as const,
+  // TEMPORARY dev-only skip — remove with the button above.
+  devSkipBtn: {
+    marginTop: 14,
+    alignSelf: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#F59E0B",
+    borderStyle: "dashed",
+    backgroundColor: "#FEF3C7",
+  },
+  devSkipText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#92400E",
+    letterSpacing: 0.3,
+  },
 });

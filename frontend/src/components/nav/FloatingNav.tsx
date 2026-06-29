@@ -1,20 +1,28 @@
 /**
- * Floating bottom nav rendered on every tab screen. Mimics web FloatingNav.tsx
- * but uses expo-router. Sits in a tab layout — visible on profile/discover/requests/chats.
+ * Floating bottom nav — premium / matrimony refresh.
+ * Icons: User, Users, HeartHandshake, MessageCircle (lucide).
  */
-import { Compass, MessageCircle, User, UserPlus } from "lucide-react-native";
+import { HeartHandshake, MessageCircle, UserRound, Users } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, usePathname } from "expo-router";
 
-import { colors } from "@/src/theme/colors";
 import { useRequestsStore } from "@/src/stores/requests-store";
 
-type Item = { key: "profile" | "discover" | "requests" | "chats"; label: string; path: string };
+const PURPLE = "#5B2C6F";
+const MUTED = "#6B7280";
+const BORDER = "#ECEAF7";
+const LIGHT_PURPLE = "#F5F3FF";
+
+type Item = {
+  key: "profile" | "discover" | "requests" | "chats";
+  label: string;
+  path: string;
+};
 
 const ITEMS: Item[] = [
   { key: "profile", label: "Profile", path: "/profile" },
-  { key: "discover", label: "Discover", path: "/discover" },
+  { key: "discover", label: "People", path: "/discover" },
   { key: "requests", label: "Requests", path: "/requests" },
   { key: "chats", label: "Chats", path: "/chats" },
 ];
@@ -26,7 +34,8 @@ export function FloatingNav() {
   const requestCount = useRequestsStore((s) => s.requests.length);
   const badgeText = requestCount > 99 ? "99+" : String(requestCount);
 
-  const isActive = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
+  const isActive = (path: string) =>
+    pathname === path || pathname.startsWith(`${path}/`);
 
   return (
     <View
@@ -36,7 +45,14 @@ export function FloatingNav() {
       <View style={styles.bar}>
         {ITEMS.map((item) => {
           const active = isActive(item.path);
-          const color = active ? colors.primary : colors.mutedForeground;
+          const color = active ? PURPLE : MUTED;
+          const stroke = active ? 2.4 : 2;
+
+          let Icon = UserRound;
+          if (item.key === "discover") Icon = Users;
+          else if (item.key === "requests") Icon = HeartHandshake;
+          else if (item.key === "chats") Icon = MessageCircle;
+
           return (
             <Pressable
               key={item.key}
@@ -45,24 +61,12 @@ export function FloatingNav() {
               style={styles.item}
             >
               <View style={styles.iconWrap}>
-                {item.key === "profile" ? (
-                  <View style={[styles.profileDot, { borderColor: active ? colors.primary : colors.border }]}>
-                    <User size={11} color={color} strokeWidth={active ? 2.4 : 1.9} />
+                <Icon size={22} color={color} strokeWidth={stroke} />
+                {item.key === "requests" && requestCount > 0 ? (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{badgeText}</Text>
                   </View>
-                ) : item.key === "discover" ? (
-                  <Compass size={18} color={color} strokeWidth={active ? 2.4 : 1.9} />
-                ) : item.key === "requests" ? (
-                  <View>
-                    <UserPlus size={18} color={color} strokeWidth={active ? 2.4 : 1.9} />
-                    {requestCount > 0 ? (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{badgeText}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                ) : (
-                  <MessageCircle size={18} color={color} strokeWidth={active ? 2.4 : 1.9} />
-                )}
+                ) : null}
               </View>
               <Text style={[styles.label, { color }]}>{item.label}</Text>
             </Pressable>
@@ -84,66 +88,51 @@ const styles = StyleSheet.create({
   },
   bar: {
     width: "100%",
-    maxWidth: 360,
-    height: 60,
-    borderRadius: 20,
-    backgroundColor: colors.card,
+    maxWidth: 372,
+    height: 68,
+    borderRadius: 24,
+    backgroundColor: "#FFF",
     borderWidth: 1,
-    borderColor: "rgba(232,225,239,0.6)",
+    borderColor: BORDER,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
     paddingHorizontal: 8,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.18,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
     shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
+    shadowRadius: 24,
     elevation: 8,
   },
   item: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
-    paddingVertical: 4,
+    gap: 4,
+    paddingVertical: 6,
   },
   iconWrap: {
-    width: 22,
-    height: 22,
+    width: 28,
+    height: 28,
     alignItems: "center",
     justifyContent: "center",
   },
-  profileDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 999,
-    borderWidth: 1,
-    backgroundColor: colors.secondary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: "700",
-  },
+  label: { fontSize: 11, fontWeight: "600" },
   badge: {
     position: "absolute",
-    top: -8,
-    left: "50%",
-    transform: [{ translateX: -8 }],
-    minWidth: 16,
-    height: 16,
-    paddingHorizontal: 4,
+    top: -6,
+    right: -10,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 5,
     borderRadius: 999,
-    backgroundColor: "#000",
+    backgroundColor: PURPLE,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: colors.card,
+    borderColor: "#FFF",
   },
-  badgeText: {
-    color: "#FFF",
-    fontSize: 9,
-    fontWeight: "700",
-  },
+  badgeText: { color: "#FFF", fontSize: 10, fontWeight: "700" },
 });
+
+void LIGHT_PURPLE;
