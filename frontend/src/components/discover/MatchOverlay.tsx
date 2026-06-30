@@ -367,6 +367,28 @@ export function MatchOverlay({
             </View>
           </Animated.View>
 
+          {/* Profile Info Below Photos */}
+          <Animated.View style={[styles.profileInfo, photosStyle]}>
+            <Text style={styles.profileName}>{matchedUserName}, 29</Text>
+            <Text style={styles.profileJob}>Senior Product Designer</Text>
+            <Text style={styles.profileLocation}>Bengaluru</Text>
+            
+            <View style={styles.profileStats}>
+              <View style={styles.stat}>
+                <Text style={styles.statIcon}>📏</Text>
+                <Text style={styles.statText}>5'10"</Text>
+              </View>
+              <View style={styles.stat}>
+                <Text style={styles.statIcon}>💪</Text>
+                <Text style={styles.statText}>Athletic</Text>
+              </View>
+              <View style={styles.stat}>
+                <Text style={styles.statIcon}>💰</Text>
+                <Text style={styles.statText}>₹24-30 LPA</Text>
+              </View>
+            </View>
+          </Animated.View>
+
           {/* Action Buttons */}
           <Animated.View style={[styles.buttonsContainer, buttonsStyle]}>
             <Pressable
@@ -442,14 +464,14 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
     lineHeight: 24,
-    marginBottom: 40,
+    marginBottom: 32,
   },
   // Profile Photos
   photosContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 48,
+    marginBottom: 20,
   },
   photoWrapper: {
     position: "relative",
@@ -473,6 +495,47 @@ const styles = StyleSheet.create({
     borderRadius: 64,
     borderWidth: 2,
     borderColor: PURPLE,
+  },
+  // Profile Info
+  profileInfo: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#fff",
+    marginBottom: 4,
+  },
+  profileJob: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.8)",
+    marginBottom: 2,
+  },
+  profileLocation: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.7)",
+    marginBottom: 12,
+  },
+  profileStats: {
+    flexDirection: "row",
+    gap: 16,
+    alignItems: "center",
+  },
+  stat: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  statIcon: {
+    fontSize: 14,
+  },
+  statText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.75)",
   },
   // Buttons
   buttonsContainer: {
