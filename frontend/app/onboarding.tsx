@@ -367,6 +367,31 @@ const Q1: QuestionScreen[] = [
   {
     kind: "q", section: 1,
     render: (s, set) => ({
+      title: "About me",
+      subtitle: "A few lines that capture who you are. This shows on your profile.",
+      canNext: true,
+      body: (
+        <View style={{ width: "100%" }}>
+          <TextInput
+            testID="onb-bio-input"
+            value={s.bio}
+            onChangeText={(t) => set("bio", t.slice(0, 400))}
+            placeholder="What you love, what you're looking for, who you are…"
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+            style={styles.bioInput}
+          />
+          <Text style={styles.bioCount}>{s.bio.length}/400</Text>
+        </View>
+      ),
+    }),
+  },
+];
+
+const Q2: QuestionScreen[] = [
+  {
+    kind: "q", section: 2,
+    render: (s, set) => ({
       title: "Preferred age range?",
       canNext: true,
       body: (
@@ -381,7 +406,7 @@ const Q1: QuestionScreen[] = [
     }),
   },
   {
-    kind: "q", section: 1, autoAdvance: true,
+    kind: "q", section: 2, autoAdvance: true,
     render: (s, set) => ({
       title: "Where should your match be?",
       canNext: !!s.prefLocation,
@@ -395,9 +420,6 @@ const Q1: QuestionScreen[] = [
       ),
     }),
   },
-];
-
-const Q2: QuestionScreen[] = [
   { kind: "q", section: 2, autoAdvance: true, render: (s, set) => ({ title: "Do you want children in the future?", canNext: !!s.nnChildren, hideNext: !!s.nnChildren, body: <OptionGrid options={["Yes", "No", "Undecided"] as const} value={s.nnChildren} onChange={(v) => set("nnChildren", v)} /> }) },
   { kind: "q", section: 2, autoAdvance: true, render: (s, set) => ({ title: "Would you consider an interfaith marriage?", canNext: !!s.nnInterfaith, hideNext: !!s.nnInterfaith, body: <OptionGrid options={["Yes", "No", "Depends on the Person"] as const} value={s.nnInterfaith} onChange={(v) => set("nnInterfaith", v)} /> }) },
   { kind: "q", section: 2, autoAdvance: true, render: (s, set) => ({ title: "Comfortable marrying a smoker?", canNext: !!s.nnSmoker, hideNext: !!s.nnSmoker, body: <OptionGrid options={["Yes", "No", "Occasional Smoking Only"] as const} value={s.nnSmoker} onChange={(v) => set("nnSmoker", v)} /> }) },
@@ -586,4 +608,24 @@ const styles = StyleSheet.create({
   smallValue: { marginTop: 4, fontSize: 12, color: colors.mutedForeground },
   rangeLabels: { marginTop: 8, flexDirection: "row", justifyContent: "space-between" },
   rangeLabel: { fontSize: 11, color: colors.mutedForeground },
+  bioInput: {
+    minHeight: 140,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.foreground,
+    textAlignVertical: "top",
+  },
+  bioCount: {
+    marginTop: 6,
+    alignSelf: "flex-end",
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.mutedForeground,
+  },
 });
