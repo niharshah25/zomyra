@@ -19,6 +19,7 @@ type Props = {
   step?: number;
   value: number;
   onChange: (n: number) => void;
+  onComplete?: (n: number) => void;
 };
 
 const THUMB = 28;
@@ -28,7 +29,7 @@ function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-export function Slider({ min, max, step = 1, value, onChange }: Props) {
+export function Slider({ min, max, step = 1, value, onChange, onComplete }: Props) {
   const [width, setWidth] = useState(0);
   const widthRef = useRef(0);
   const trackPageXRef = useRef(0);
@@ -46,6 +47,7 @@ export function Slider({ min, max, step = 1, value, onChange }: Props) {
   const update = (pageX: number) => {
     const next = clamp(xToValue(pageToLocal(pageX)), min, max);
     onChange(next);
+    return next;
   };
 
   const pan = useRef(
@@ -54,7 +56,12 @@ export function Slider({ min, max, step = 1, value, onChange }: Props) {
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (e) => update(e.nativeEvent.pageX),
       onPanResponderMove: (e) => update(e.nativeEvent.pageX),
-      onPanResponderRelease: (e) => update(e.nativeEvent.pageX),
+      onPanResponderRelease: (e) => {
+        const finalValue = update(e.nativeEvent.pageX);
+        if (onComplete) {
+          onComplete(finalValue);
+        }
+      },
     }),
   ).current;
 
