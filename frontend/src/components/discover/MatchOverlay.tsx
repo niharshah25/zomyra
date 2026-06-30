@@ -304,9 +304,6 @@ export function MatchOverlay({
   return (
     <Modal visible={visible} transparent animationType="none">
       <Animated.View style={[styles.overlay, overlayStyle]}>
-        {/* Semi-transparent dark overlay - shows content behind */}
-        <View style={StyleSheet.absoluteFill} />
-        
         <View style={styles.content}>
           {/* Floating Hearts */}
           <Animated.View style={[styles.heart, styles.heart1, heart1Style]}>
