@@ -18,6 +18,7 @@ import { ScaleSlider } from "@/src/components/onboarding/ScaleSlider";
 import { Slider } from "@/src/components/onboarding/Slider";
 import { calcAge, DateWheel } from "@/src/components/onboarding/DateWheel";
 import { TreasureMap, type TreasureStepInfo } from "@/src/components/onboarding/TreasureMap";
+import { PersonalityChat } from "@/src/components/onboarding/PersonalityChat";
 import {
   cmToImperial,
   HEIGHT_MAX_CM,
@@ -26,13 +27,13 @@ import {
   LANGUAGES,
   PROFESSIONS,
 } from "@/src/lib/onboarding/data";
-import { SCALE_QUESTIONS } from "@/src/lib/onboarding/scales";
 import { useOnboardingStore } from "@/src/stores/onboarding-store";
 import { colors } from "@/src/theme/colors";
 import type { OnboardingState } from "@/src/lib/onboarding/types";
 
 type Section = 1 | 2 | 3;
 type IntroScreen = { kind: "intro"; section: Section };
+type ChatScreen = { kind: "chat"; section: 3 };
 type Setter = <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
 type RenderResult = {
   title: string;
@@ -52,7 +53,7 @@ type QuestionScreen = {
   autoAdvance?: boolean;
   render: (s: OnboardingState, set: Setter) => RenderResult;
 };
-type Screen = IntroScreen | QuestionScreen;
+type Screen = IntroScreen | QuestionScreen | ChatScreen;
 
 const INTROS: Record<Section, TreasureStepInfo> = {
   1: {
@@ -427,31 +428,11 @@ const Q2: QuestionScreen[] = [
   { kind: "q", section: 2, autoAdvance: true, render: (s, set) => ({ title: "Would you relocate after marriage?", canNext: !!s.nnRelocation, hideNext: !!s.nnRelocation, body: <OptionGrid options={["Yes", "No", "Depends on Circumstances"] as const} value={s.nnRelocation} onChange={(v) => set("nnRelocation", v)} /> }) },
 ];
 
-const Q3: QuestionScreen[] = SCALE_QUESTIONS.map((q) => ({
-  kind: "q",
-  section: 3,
-  render: (s, set) => {
-    const v = s.scales[q.id] ?? 3;
-    return {
-      title: q.prompt,
-      subtitle: q.title,
-      canNext: true,
-      body: (
-        <ScaleSlider
-          value={v}
-          left={q.left}
-          right={q.right}
-          onChange={(n) => set("scales", { ...s.scales, [q.id]: n })}
-        />
-      ),
-    };
-  },
-}));
-
+// Section 3 uses conversational chat UI instead of individual question screens
 const SCREENS: Screen[] = [
   { kind: "intro", section: 1 }, ...Q1,
   { kind: "intro", section: 2 }, ...Q2,
-  { kind: "intro", section: 3 }, ...Q3,
+  { kind: "intro", section: 3 }, { kind: "chat", section: 3 },
 ];
 
 export default function OnboardingScreen() {
@@ -539,6 +520,17 @@ export default function OnboardingScreen() {
   if (screen.kind === "intro") {
     return (
       <TreasureMap info={INTROS[screen.section]} onContinue={handleNext} onBack={handleBack} />
+    );
+  }
+
+  if (screen.kind === "chat") {
+    return (
+      <PersonalityChat
+        state={state}
+        onUpdateScale={(id, value) => set("scales", { ...state.scales, [id]: value })}
+        onComplete={handleNext}
+        onBack={handleBack}
+      />
     );
   }
 
