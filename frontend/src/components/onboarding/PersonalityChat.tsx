@@ -12,6 +12,8 @@ import {
   Pressable,
 } from "react-native";
 import { Sparkles, ArrowLeft } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
+import { Slider } from "@/src/components/onboarding/Slider";
 import { colors } from "@/src/theme/colors";
 import { SCALE_QUESTIONS } from "@/src/lib/onboarding/scales";
 import type { OnboardingState } from "@/src/lib/onboarding/types";
@@ -139,6 +141,13 @@ export function PersonalityChat({ state, onUpdateScale, onComplete, onBack }: Pr
     const q = SCALE_QUESTIONS.find((q) => q.id === questionId);
     if (!q) return;
 
+    // Haptic feedback on mobile
+    try {
+      Haptics.selectionAsync();
+    } catch (e) {
+      // Haptics not available (web)
+    }
+
     // Save the value
     onUpdateScale(questionId, value);
 
@@ -150,24 +159,49 @@ export function PersonalityChat({ state, onUpdateScale, onComplete, onBack }: Pr
       userResponse: { value, text: responseText },
     });
 
-    // Show affirmation after a brief delay
+    // Show affirmation after a brief delay with more personality
     setTimeout(() => {
+      const questionNumber = currentQuestionIndex + 1;
+      const isLastQuestion = questionNumber === SCALE_QUESTIONS.length;
+      
+      // More varied and contextual affirmations
       const affirmations = [
         "Love that! 💜",
+        "I hear you! 💜",
+        "That makes sense! 💜",
         "Got it! 💜",
         "Perfect! 💜",
-        "Great! 💜",
+        "Great choice! 💜",
         "Wonderful! 💜",
+        "Really appreciate your honesty! 💜",
+        "That's helpful to know! 💜",
+        "Thanks for sharing! 💜",
       ];
-      const affirmation =
-        affirmations[Math.floor(Math.random() * affirmations.length)];
+      
+      const transitions = [
+        "Here's the next one for you.",
+        "Let's keep going!",
+        "Moving on to the next question.",
+        "Next question coming up!",
+        "One more coming your way.",
+        "Here's another one.",
+      ];
+      
+      const affirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
+      const transition = transitions[Math.floor(Math.random() * transitions.length)];
+
+      let message = "";
+      if (isLastQuestion) {
+        message = `${affirmation}\n\nLast one! You're almost there! 🎉`;
+      } else if (questionNumber === SCALE_QUESTIONS.length - 1) {
+        message = `${affirmation}\n\nAlmost done! Just one more after this.`;
+      } else {
+        message = `${affirmation}\n\n${transition}`;
+      }
 
       addMessage({
         type: "bot",
-        text:
-          currentQuestionIndex < SCALE_QUESTIONS.length - 1
-            ? `${affirmation}\n\nHere's the next one for you.`
-            : `${affirmation}\n\nLast one!`,
+        text: message,
       });
 
       // Move to next question
@@ -182,22 +216,31 @@ export function PersonalityChat({ state, onUpdateScale, onComplete, onBack }: Pr
 
   return (
     <View style={styles.container}>
-      {/* Header with progress and back button */}
+      {/* Header with progress steps and back button */}
       <View style={styles.header}>
         {onBack && (
           <Pressable onPress={onBack} style={styles.backButton}>
             <ArrowLeft size={24} color={colors.text} />
           </Pressable>
         )}
-        <View style={styles.progressContainer}>
-          <View
-            style={[
-              styles.progressBar,
-              {
-                width: `${((currentQuestionIndex + 1) / SCALE_QUESTIONS.length) * 100}%`,
-              },
-            ]}
-          />
+        
+        {/* Step indicators (dots) */}
+        <View style={styles.stepsContainer}>
+          {Array.from({ length: SCALE_QUESTIONS.length }).map((_, index) => {
+            const isCompleted = index < currentQuestionIndex;
+            const isCurrent = index === currentQuestionIndex;
+            
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.stepDot,
+                  isCompleted && styles.stepDotCompleted,
+                  isCurrent && styles.stepDotCurrent,
+                ]}
+              />
+            );
+          })}
         </View>
       </View>
 
@@ -349,6 +392,7 @@ function QuestionMessage({
   const [sliderValue, setSliderValue] = useState(data.value);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(10)).current;
+  const hasSubmitted = useRef(false);
 
   useEffect(() => {
     Animated.parallel([
@@ -366,6 +410,18 @@ function QuestionMessage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleSliderChange = (value: number) => {
+    setSliderValue(value);
+    hasSubmitted.current = false;
+  };
+
+  const handleSliderComplete = () => {
+    if (!hasSubmitted.current) {
+      hasSubmitted.current = true;
+      onComplete(questionId, sliderValue);
+    }
+  };
+
   return (
     <Animated.View
       style={[
@@ -381,88 +437,27 @@ function QuestionMessage({
         <View style={styles.botBubble}>
           <Text style={styles.botText}>{data.prompt}</Text>
 
-          {/* Inline slider */}
-          <View style={styles.sliderContainer}>
-            <Text style={styles.sliderLabel}>{data.left}</Text>
-            <Text style={styles.sliderLabel}>{data.right}</Text>
+          {/* Slider labels */}
+          <View style={styles.sliderLabels}>
+            <Text style={styles.sliderLabelLeft}>{data.left}</Text>
+            <Text style={styles.sliderLabelRight}>{data.right}</Text>
           </View>
           
-          <ChatSlider
-            value={sliderValue}
-            onChange={setSliderValue}
-            onComplete={(value) => onComplete(questionId, value)}
-          />
+          {/* Use the existing Slider component */}
+          <View style={styles.sliderWrapper}>
+            <Slider
+              min={1}
+              max={5}
+              step={1}
+              value={sliderValue}
+              onChange={handleSliderChange}
+              onComplete={handleSliderComplete}
+            />
+          </View>
         </View>
         <Text style={styles.timestamp}>{timestamp}</Text>
       </View>
     </Animated.View>
-  );
-}
-
-// Simple slider component for chat
-function ChatSlider({
-  value,
-  onChange,
-  onComplete,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  onComplete: (v: number) => void;
-}) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [localValue, setLocalValue] = useState(value);
-  const sliderWidth = 240;
-
-  const handleValueChange = (newValue: number) => {
-    const clampedValue = Math.max(1, Math.min(5, newValue));
-    setLocalValue(clampedValue);
-    onChange(clampedValue);
-  };
-
-  const handlePress = (x: number) => {
-    const position = Math.max(0, Math.min(x, sliderWidth));
-    const newValue = Math.round((position / sliderWidth) * 4) + 1;
-    handleValueChange(newValue);
-    // Auto-submit after tap
-    setTimeout(() => {
-      onComplete(newValue);
-    }, 300);
-  };
-
-  return (
-    <View style={styles.chatSlider}>
-      <View style={styles.sliderTrack}>
-        {/* Active fill */}
-        <View
-          style={[
-            styles.sliderFill,
-            { width: `${((localValue - 1) / 4) * 100}%` },
-          ]}
-        />
-        
-        {/* Thumb */}
-        <View
-          style={[
-            styles.sliderThumb,
-            { left: ((localValue - 1) / 4) * sliderWidth - 10 },
-            isDragging && styles.sliderThumbActive,
-          ]}
-        />
-      </View>
-
-      {/* Tap area for interaction */}
-      <Pressable
-        style={styles.sliderTapArea}
-        onPress={(e) => {
-          const x = e.nativeEvent.locationX;
-          handlePress(x);
-        }}
-        onPressIn={() => setIsDragging(true)}
-        onPressOut={() => {
-          setIsDragging(false);
-        }}
-      />
-    </View>
   );
 }
 
@@ -540,17 +535,27 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 4,
   },
-  progressContainer: {
+  stepsContainer: {
     flex: 1,
-    height: 4,
-    backgroundColor: "#F0ECF5",
-    borderRadius: 2,
-    overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
   },
-  progressBar: {
-    height: "100%",
+  stepDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#E8E0F0",
+  },
+  stepDotCurrent: {
+    width: 24,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.primary,
-    borderRadius: 2,
+  },
+  stepDotCompleted: {
+    backgroundColor: colors.primary,
   },
   scrollView: {
     flex: 1,
@@ -617,60 +622,25 @@ const styles = StyleSheet.create({
     marginLeft: 0,
     marginRight: 4,
   },
-  sliderContainer: {
+  sliderLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  sliderLabel: {
-    fontSize: 13,
+  sliderLabelLeft: {
+    fontSize: 12,
     color: colors.primary,
     fontWeight: "600",
   },
-  chatSlider: {
-    marginTop: 8,
-    height: 40,
+  sliderLabelRight: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: "600",
   },
-  sliderTrack: {
-    height: 6,
-    backgroundColor: "#E8E0F0",
-    borderRadius: 3,
-    position: "relative",
-    marginVertical: 17,
-  },
-  sliderFill: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: colors.primary,
-    borderRadius: 3,
-  },
-  sliderThumb: {
-    position: "absolute",
-    top: -7,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    borderWidth: 3,
-    borderColor: colors.primary,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sliderThumbActive: {
-    transform: [{ scale: 1.2 }],
-  },
-  sliderTapArea: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  sliderWrapper: {
+    marginTop: 12,
+    marginBottom: 4,
   },
   typingBubble: {
     backgroundColor: "#F5F3F8",
