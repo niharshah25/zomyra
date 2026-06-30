@@ -12,7 +12,6 @@ import {
   Pressable,
   Image,
   Dimensions,
-  Modal,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -302,9 +301,8 @@ export function MatchOverlay({
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="none">
-      <Animated.View style={[styles.overlay, overlayStyle]}>
-        <View style={styles.content}>
+    <Animated.View style={[styles.overlay, overlayStyle]} pointerEvents="box-none">
+      <View style={styles.content}>
           {/* Floating Hearts */}
           <Animated.View style={[styles.heart, styles.heart1, heart1Style]}>
             <Text style={styles.heartEmoji}>💜</Text>
@@ -408,16 +406,20 @@ export function MatchOverlay({
           </Animated.View>
         </View>
       </Animated.View>
-    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: "rgba(30, 35, 48, 0.88)",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 9999,
   },
   content: {
     alignItems: "center",
