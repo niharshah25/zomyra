@@ -18,6 +18,7 @@ import { CompatibilitySheet } from "@/src/components/discover/CompatibilitySheet
 import { DualRangeSlider } from "@/src/components/discover/DualRangeSlider";
 import { PremiumFilterDialog } from "@/src/components/discover/PremiumFilterDialog";
 import { ProfileView } from "@/src/components/discover/ProfileView";
+import { MatchOverlay } from "@/src/components/discover/MatchOverlay";
 import { FloatingNav } from "@/src/components/nav/FloatingNav";
 import type { CompatibilityDimension } from "@/src/lib/discover/mock";
 import { discoverService } from "@/src/services/discover";
@@ -76,6 +77,10 @@ export default function Discover() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [quickKey, setQuickKey] = useState<QuickKey | null>(null);
 
+  // Match overlay state
+  const [showMatchOverlay, setShowMatchOverlay] = useState(false);
+  const [matchedProfile, setMatchedProfile] = useState<any>(null);
+
   // Draft values inside the centered dialog — never persisted because all
   // four filters are Premium (Apply → /premium).
   const [heightRange, setHeightRange] = useState<[number, number]>([150, 195]);
@@ -98,6 +103,36 @@ export default function Discover() {
   const advance = () => {
     if (sortedProfiles.length === 0) return;
     setIdx((i) => (i + 1) % sortedProfiles.length);
+  };
+
+  const handleLike = async () => {
+    if (!profile) return;
+    
+    // Call API to express interest
+    const currentUserId = "current-user-123"; // TODO: Get from auth context
+    const result = await discoverService.connect(currentUserId, profile.id);
+    
+    // Check if it's a mutual match
+    if (result.isMatch) {
+      setMatchedProfile(profile);
+      setShowMatchOverlay(true);
+    } else {
+      // No match yet, just advance
+      advance();
+    }
+  };
+
+  const handleStartConversation = () => {
+    setShowMatchOverlay(false);
+    if (matchedProfile) {
+      router.push(`/chats/${matchedProfile.id}` as never);
+    }
+  };
+
+  const handleKeepDiscovering = () => {
+    setShowMatchOverlay(false);
+    setMatchedProfile(null);
+    advance();
   };
 
   const profile = sortedProfiles[idx];
@@ -212,7 +247,7 @@ export default function Discover() {
               </Pressable>
               <Pressable
                 testID="discover-action-like"
-                onPress={advance}
+                onPress={handleLike}
                 style={({ pressed }) => [
                   styles.actionBtn,
                   styles.actionBtnLike,
@@ -309,6 +344,19 @@ export default function Discover() {
           </>
         );
       })()}
+
+      {/* Match Overlay */}
+      {matchedProfile && (
+        <MatchOverlay
+          visible={showMatchOverlay}
+          currentUserPhoto="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400"
+          matchedUserPhoto={matchedProfile.photos[0]}
+          matchedUserName={matchedProfile.name}
+          matchedUserId={matchedProfile.id}
+          onStartConversation={handleStartConversation}
+          onKeepDiscovering={handleKeepDiscovering}
+        />
+      )}
     </SafeAreaView>
   );
 }
