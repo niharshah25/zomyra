@@ -150,15 +150,15 @@ export default function Discover() {
             pressed && { opacity: 0.85 },
           ]}
         >
-          <Sparkles size={14} color={PURPLE} strokeWidth={2} />
+          <Sparkles size={12} color={PURPLE} strokeWidth={2} />
           <Text style={styles.headerPillText} numberOfLines={1}>
             {dimLabel} matches
           </Text>
-          <ChevronDown size={14} color={PURPLE} strokeWidth={2} />
+          <ChevronDown size={12} color={PURPLE} strokeWidth={2} />
         </Pressable>
 
         <View style={styles.headerCenter} pointerEvents="none">
-          <Wordmark fontSize={26} />
+          <Wordmark fontSize={22} />
         </View>
 
         <Pressable
@@ -170,13 +170,13 @@ export default function Discover() {
           ]}
           hitSlop={8}
         >
-          <SlidersHorizontal size={20} color={PURPLE} strokeWidth={2} />
+          <SlidersHorizontal size={18} color={PURPLE} strokeWidth={2} />
         </Pressable>
       </View>
 
       {/* "Showing your best XXX matches" banner */}
       <View style={styles.banner}>
-        <Sparkles size={14} color={PURPLE} strokeWidth={2} />
+        <Sparkles size={12} color={PURPLE} strokeWidth={2} />
         <Text style={styles.bannerText}>
           Showing your best <Text style={styles.bannerHi}>{dimLabel}</Text> matches
         </Text>
@@ -435,22 +435,19 @@ const styles = StyleSheet.create({
 
   // header
   header: {
-    paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    position: "relative",
+    zIndex: 10,
   },
   headerCenter: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    marginHorizontal: 48,
   },
   kicker: {
     fontSize: 12,
@@ -466,8 +463,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   settingsBtn: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: 999,
     backgroundColor: LIGHT_PURPLE,
     borderWidth: 1,
@@ -485,17 +482,17 @@ const styles = StyleSheet.create({
   headerPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: BORDER,
     backgroundColor: "#FFF",
-    maxWidth: 150,
+    minWidth: 110,
   },
   headerPillText: {
-    fontSize: 12.5,
+    fontSize: 11,
     fontWeight: "700",
     color: PURPLE,
     letterSpacing: -0.1,
@@ -504,27 +501,27 @@ const styles = StyleSheet.create({
   // chip row
   chipsRow: {
     paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 8,
+    paddingTop: 6,
+    paddingBottom: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
   chip: {
     flexShrink: 0,
-    height: 40,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    height: 34,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: BORDER,
     backgroundColor: "#FFF",
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 5,
   },
   chipLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
     color: TEXT,
     letterSpacing: -0.1,
@@ -577,20 +574,20 @@ const styles = StyleSheet.create({
   // banner
   banner: {
     marginHorizontal: 16,
-    marginTop: 4,
+    marginTop: 2,
     marginBottom: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 999,
     backgroundColor: LIGHT_PURPLE,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 5,
     borderWidth: 1,
     borderColor: BORDER,
   },
-  bannerText: { fontSize: 13, fontWeight: "500", color: TEXT },
+  bannerText: { fontSize: 11, fontWeight: "500", color: TEXT },
   bannerHi: { color: PURPLE, fontWeight: "700" },
 
   empty: { padding: 32, textAlign: "center", color: MUTED },

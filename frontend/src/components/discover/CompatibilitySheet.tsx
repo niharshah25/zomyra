@@ -26,7 +26,9 @@ import {
   StyleSheet,
   Text,
   View,
+  ScrollView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { CompatibilityDimension } from "@/src/lib/discover/mock";
 
@@ -86,6 +88,7 @@ export function CompatibilitySheet({ visible, selected, onClose, onApply }: Prop
   const [draft, setDraft] = useState<CompatibilityDimension>(selected);
   const translateY = useRef(new Animated.Value(SCREEN_H)).current;
   const backdrop = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (visible) {
@@ -139,95 +142,101 @@ export function CompatibilitySheet({ visible, selected, onClose, onApply }: Prop
         </Animated.View>
 
         <Animated.View
-          style={[styles.sheet, { transform: [{ translateY }] }]}
+          style={[styles.sheet, { transform: [{ translateY }], paddingTop: Math.max(insets.top, 12) }]}
           testID="compat-sheet"
         >
           <View style={styles.grabber} />
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>Discovery Mode</Text>
-            <Pressable
-              testID="compat-sheet-close"
-              onPress={onClose}
-              hitSlop={10}
-              style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
-            >
-              <X size={18} color={TEXT} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-          <Text style={styles.subtitle}>
-            Choose how Zomyra should rank the people you see today.
-          </Text>
-
-          <View style={{ marginTop: 16, gap: 10 }}>
-            {OPTIONS.map((opt) => {
-              const active = draft === opt.key;
-              const I = opt.Icon;
-              return (
-                <Pressable
-                  key={opt.key}
-                  testID={`compat-option-${opt.key}`}
-                  onPress={() => setDraft(opt.key)}
-                  style={[styles.option, active && styles.optionActive]}
-                >
-                  <View style={[styles.optionIcon, active && styles.optionIconActive]}>
-                    <I
-                      size={20}
-                      color={active ? "#FFF" : PURPLE}
-                      strokeWidth={2}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.optionTitleRow}>
-                      <Text style={styles.optionTitle}>{opt.title}</Text>
-                      {opt.recommended ? (
-                        <View style={styles.recommendBadge}>
-                          <Text style={styles.recommendText}>Recommended</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                    <Text style={styles.optionSub}>{opt.subtitle}</Text>
-                  </View>
-                  <View
-                    style={[styles.radio, active && styles.radioActive]}
-                  >
-                    {active ? <View style={styles.radioDot} /> : null}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* ── Privacy card ── */}
-          <View style={styles.privacyCard}>
-            <View style={styles.privacyIcon}>
-              <ShieldCheck size={18} color={PURPLE} strokeWidth={2} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.privacyTitle}>Your choice is always private</Text>
-              <Text style={styles.privacySub}>
-                Only you can see how you discover matches.
-              </Text>
-            </View>
-          </View>
-
-          {/* ── CTA ── */}
-          <Pressable
-            testID="compat-apply"
-            onPress={apply}
-            style={({ pressed }) => [
-              styles.cta,
-              pressed && { transform: [{ scale: 0.985 }] },
-            ]}
+          
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) }}
           >
-            <LinearGradient
-              colors={[PURPLE, PURPLE_DEEP]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.ctaGradient}
+            <View style={styles.headerRow}>
+              <Text style={styles.title}>Discovery Mode</Text>
+              <Pressable
+                testID="compat-sheet-close"
+                onPress={onClose}
+                hitSlop={10}
+                style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
+              >
+                <X size={18} color={TEXT} strokeWidth={2.2} />
+              </Pressable>
+            </View>
+            <Text style={styles.subtitle}>
+              Choose how Zomyra should rank the people you see today.
+            </Text>
+
+            <View style={{ marginTop: 16, gap: 10 }}>
+              {OPTIONS.map((opt) => {
+                const active = draft === opt.key;
+                const I = opt.Icon;
+                return (
+                  <Pressable
+                    key={opt.key}
+                    testID={`compat-option-${opt.key}`}
+                    onPress={() => setDraft(opt.key)}
+                    style={[styles.option, active && styles.optionActive]}
+                  >
+                    <View style={[styles.optionIcon, active && styles.optionIconActive]}>
+                      <I
+                        size={20}
+                        color={active ? "#FFF" : PURPLE}
+                        strokeWidth={2}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.optionTitleRow}>
+                        <Text style={styles.optionTitle}>{opt.title}</Text>
+                        {opt.recommended ? (
+                          <View style={styles.recommendBadge}>
+                            <Text style={styles.recommendText}>Recommended</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={styles.optionSub}>{opt.subtitle}</Text>
+                    </View>
+                    <View
+                      style={[styles.radio, active && styles.radioActive]}
+                    >
+                      {active ? <View style={styles.radioDot} /> : null}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* ── Privacy card ── */}
+            <View style={styles.privacyCard}>
+              <View style={styles.privacyIcon}>
+                <ShieldCheck size={18} color={PURPLE} strokeWidth={2} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.privacyTitle}>Your choice is always private</Text>
+                <Text style={styles.privacySub}>
+                  Only you can see how you discover matches.
+                </Text>
+              </View>
+            </View>
+
+            {/* ── CTA ── */}
+            <Pressable
+              testID="compat-apply"
+              onPress={apply}
+              style={({ pressed }) => [
+                styles.cta,
+                pressed && { transform: [{ scale: 0.985 }] },
+              ]}
             >
-              <Text style={styles.ctaText}>Apply & Show Matches</Text>
-            </LinearGradient>
-          </Pressable>
+              <LinearGradient
+                colors={[PURPLE, PURPLE_DEEP]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.ctaGradient}
+              >
+                <Text style={styles.ctaText}>Apply & Show Matches</Text>
+              </LinearGradient>
+            </Pressable>
+          </ScrollView>
         </Animated.View>
       </View>
     </Modal>
@@ -262,14 +271,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   title: {
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: "700",
     color: TEXT,
     letterSpacing: -0.3,
   },
   subtitle: {
     marginTop: 4,
-    fontSize: 13,
+    fontSize: 12,
     color: MUTED,
     fontWeight: "400",
   },
@@ -286,9 +295,9 @@ const styles = StyleSheet.create({
   option: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    padding: 14,
-    borderRadius: 20,
+    gap: 12,
+    padding: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: BORDER,
     backgroundColor: "#FFF",

@@ -10,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BottomSheet } from "@/src/components/ui/BottomSheet";
 import { ConfirmDialog } from "@/src/components/ui/ConfirmDialog";
 import { ProfileView } from "@/src/components/discover/ProfileView";
+import { MatchOverlay } from "@/src/components/discover/MatchOverlay";
 import { FloatingNav } from "@/src/components/nav/FloatingNav";
 import { toast } from "@/src/components/ui/Toast";
 import { useRequestsStore, type ConnectionRequest } from "@/src/stores/requests-store";
@@ -17,6 +18,7 @@ import { useChatStore } from "@/src/stores/chat-store";
 import type { CompatibilityTier } from "@/src/lib/discover/mock";
 import { colors } from "@/src/theme/colors";
 import { ScrollView } from "react-native";
+import { useRouter } from "expo-router";
 
 const TIER_COLOR: Record<CompatibilityTier, { dot: string; bg: string; text: string; border: string }> = {
   "Excellent Match": { dot: "#8B5CF6", bg: "rgba(139,92,246,0.10)", text: "#6D28D9", border: "rgba(139,92,246,0.25)" },
@@ -25,6 +27,7 @@ const TIER_COLOR: Record<CompatibilityTier, { dot: string; bg: string; text: str
 };
 
 export default function Requests() {
+  const router = useRouter();
   const requests = useRequestsStore((s) => s.requests);
   const isPremium = useRequestsStore((s) => s.premium);
   const setPremium = useRequestsStore((s) => s.setPremium);
@@ -34,6 +37,10 @@ export default function Requests() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pendingDecline, setPendingDecline] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
+
+  // Match overlay state
+  const [showMatchOverlay, setShowMatchOverlay] = useState(false);
+  const [matchedProfile, setMatchedProfile] = useState<any>(null);
 
   const active = requests.find((r) => r.id === activeId) ?? null;
 
@@ -64,8 +71,23 @@ export default function Requests() {
       removeRequest(req.id);
       setAccepting(false);
       setActiveId(null);
-      toast.success("Connection accepted");
+      
+      // Show match overlay
+      setMatchedProfile(req.profile);
+      setShowMatchOverlay(true);
     }, 500);
+  };
+
+  const handleStartConversation = () => {
+    setShowMatchOverlay(false);
+    if (matchedProfile) {
+      router.push(`/chats/${matchedProfile.id}` as never);
+    }
+  };
+
+  const handleKeepDiscovering = () => {
+    setShowMatchOverlay(false);
+    setMatchedProfile(null);
   };
 
   const decline = (id: string) => {
@@ -162,6 +184,19 @@ export default function Requests() {
         onCancel={() => setPendingDecline(null)}
         onConfirm={() => pendingDecline && decline(pendingDecline)}
       />
+
+      {/* Match Overlay */}
+      {matchedProfile && (
+        <MatchOverlay
+          visible={showMatchOverlay}
+          currentUserPhoto="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400"
+          matchedUserPhoto={matchedProfile.hero}
+          matchedUserName={matchedProfile.name}
+          matchedUserId={matchedProfile.id}
+          onStartConversation={handleStartConversation}
+          onKeepDiscovering={handleKeepDiscovering}
+        />
+      )}
     </SafeAreaView>
   );
 }
