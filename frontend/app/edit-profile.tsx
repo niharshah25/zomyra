@@ -238,20 +238,6 @@ export default function EditProfileScreen() {
             </Text>
           </SectionCard>
 
-          {/* ── About Me / bio ── */}
-          <SectionCard kicker="ABOUT ME" Icon={UserRound} testID="card-about">
-            <TextInput
-              testID="edit-bio"
-              value={state.bio}
-              onChangeText={(t) => set("bio", t.slice(0, 400))}
-              placeholder="Write a few lines about yourself — what you love, what you're looking for, who you are."
-              placeholderTextColor={MUTED}
-              multiline
-              style={styles.bioInput}
-            />
-            <Text style={styles.helperRight}>{state.bio.length}/400</Text>
-          </SectionCard>
-
           {/* ── More photos ── */}
           <SectionCard kicker="MORE PHOTOS" Icon={Camera} testID="card-photos">
             <View style={styles.photoGrid}>

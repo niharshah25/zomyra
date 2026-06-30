@@ -11,6 +11,7 @@ import {
   Animated,
   Pressable,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Sparkles, ArrowLeft } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { Slider } from "@/src/components/onboarding/Slider";
@@ -202,10 +203,12 @@ export function PersonalityChat({ state, onUpdateScale, onComplete, onBack }: Pr
     }, 500);
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
       {/* Header with progress line and back button */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
         {onBack && (
           <Pressable onPress={onBack} style={styles.backButton}>
             <ArrowLeft size={24} color={colors.text} />
