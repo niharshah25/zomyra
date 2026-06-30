@@ -161,10 +161,7 @@ export function PersonalityChat({ state, onUpdateScale, onComplete, onBack }: Pr
 
     // Show affirmation after a brief delay with more personality
     setTimeout(() => {
-      const questionNumber = currentQuestionIndex + 1;
-      const isLastQuestion = questionNumber === SCALE_QUESTIONS.length;
-      
-      // More varied and contextual affirmations
+      // More varied affirmations
       const affirmations = [
         "Love that! 💜",
         "I hear you! 💜",
@@ -190,18 +187,9 @@ export function PersonalityChat({ state, onUpdateScale, onComplete, onBack }: Pr
       const affirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
       const transition = transitions[Math.floor(Math.random() * transitions.length)];
 
-      let message = "";
-      if (isLastQuestion) {
-        message = `${affirmation}\n\nLast one! You're almost there! 🎉`;
-      } else if (questionNumber === SCALE_QUESTIONS.length - 1) {
-        message = `${affirmation}\n\nAlmost done! Just one more after this.`;
-      } else {
-        message = `${affirmation}\n\n${transition}`;
-      }
-
       addMessage({
         type: "bot",
-        text: message,
+        text: `${affirmation}\n\n${transition}`,
       });
 
       // Move to next question
@@ -216,7 +204,7 @@ export function PersonalityChat({ state, onUpdateScale, onComplete, onBack }: Pr
 
   return (
     <View style={styles.container}>
-      {/* Header with progress steps and back button */}
+      {/* Header with progress line and back button */}
       <View style={styles.header}>
         {onBack && (
           <Pressable onPress={onBack} style={styles.backButton}>
@@ -224,23 +212,16 @@ export function PersonalityChat({ state, onUpdateScale, onComplete, onBack }: Pr
           </Pressable>
         )}
         
-        {/* Step indicators (dots) */}
-        <View style={styles.stepsContainer}>
-          {Array.from({ length: SCALE_QUESTIONS.length }).map((_, index) => {
-            const isCompleted = index < currentQuestionIndex;
-            const isCurrent = index === currentQuestionIndex;
-            
-            return (
-              <View
-                key={index}
-                style={[
-                  styles.stepDot,
-                  isCompleted && styles.stepDotCompleted,
-                  isCurrent && styles.stepDotCurrent,
-                ]}
-              />
-            );
-          })}
+        {/* Progress line */}
+        <View style={styles.progressContainer}>
+          <View
+            style={[
+              styles.progressBar,
+              {
+                width: `${(currentQuestionIndex / SCALE_QUESTIONS.length) * 100}%`,
+              },
+            ]}
+          />
         </View>
       </View>
 
@@ -535,27 +516,17 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 4,
   },
-  stepsContainer: {
+  progressContainer: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
+    height: 4,
+    backgroundColor: "#F0ECF5",
+    borderRadius: 2,
+    overflow: "hidden",
   },
-  stepDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#E8E0F0",
-  },
-  stepDotCurrent: {
-    width: 24,
-    height: 8,
-    borderRadius: 4,
+  progressBar: {
+    height: "100%",
     backgroundColor: colors.primary,
-  },
-  stepDotCompleted: {
-    backgroundColor: colors.primary,
+    borderRadius: 2,
   },
   scrollView: {
     flex: 1,
