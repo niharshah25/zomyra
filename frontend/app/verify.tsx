@@ -6,12 +6,11 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { Camera, Check, Clock, ImagePlus, ShieldCheck, Sun, UserCircle2, X } from "lucide-react-native";
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { OnboardingShell } from "@/src/components/onboarding/OnboardingShell";
 import { PhotoUploadGrid } from "@/src/components/verification/PhotoUploadGrid";
 import { MIN_PHOTOS } from "@/src/lib/verification/types";
-import { useOnboardingStore } from "@/src/stores/onboarding-store";
 import { useVerificationStore } from "@/src/stores/verification-store";
 import { colors } from "@/src/theme/colors";
 
@@ -23,8 +22,6 @@ export default function VerifyScreen() {
   const setPhotos = useVerificationStore((s) => s.setPhotos);
   const setSelfie = useVerificationStore((s) => s.setSelfie);
   const submit = useVerificationStore((s) => s.submit);
-  const bio = useOnboardingStore((s) => s.state.bio);
-  const setOnboarding = useOnboardingStore((s) => s.set);
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,8 +49,7 @@ export default function VerifyScreen() {
 
   if (step === 0) {
     const enough = state.photos.length >= MIN_PHOTOS;
-    const bioOk = bio.trim().length >= 20;
-    const canContinue = enough && bioOk;
+    const canContinue = enough;
     return (
       <OnboardingShell
         step={0}
@@ -71,25 +67,6 @@ export default function VerifyScreen() {
             Please upload at least {MIN_PHOTOS} photos to continue. ({state.photos.length}/{MIN_PHOTOS})
           </Text>
         ) : null}
-
-        <View style={styles.bioBlock}>
-          <Text style={styles.bioLabel}>ABOUT ME</Text>
-          <Text style={styles.bioHint}>
-            Write a short bio so matches get a feel for who you are. (min 20 characters)
-          </Text>
-          <View style={styles.bioInputWrap}>
-            <TextInput
-              testID="verify-bio-input"
-              value={bio}
-              onChangeText={(t) => setOnboarding("bio", t.slice(0, 300))}
-              placeholder="I'm a product designer who loves long walks, weekend baking, and a good book…"
-              placeholderTextColor={colors.mutedForeground}
-              multiline
-              style={styles.bioInput}
-            />
-            <Text style={styles.bioCount}>{bio.length}/300</Text>
-          </View>
-        </View>
       </OnboardingShell>
     );
   }
@@ -270,43 +247,6 @@ function StatusRow({ label, done, pending }: { label: string; done?: boolean; pe
 
 const styles = StyleSheet.create({
   helperText: { marginTop: 12, fontSize: 13, fontWeight: "600", color: colors.mutedForeground },
-  bioBlock: { marginTop: 24 },
-  bioLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.4,
-    color: colors.primary,
-    marginBottom: 6,
-  },
-  bioHint: {
-    fontSize: 12.5,
-    color: colors.mutedForeground,
-    marginBottom: 8,
-    lineHeight: 18,
-  },
-  bioInputWrap: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  bioInput: {
-    minHeight: 96,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.foreground,
-    textAlignVertical: "top",
-  },
-  bioCount: {
-    alignSelf: "flex-end",
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.mutedForeground,
-    marginTop: 4,
-  },
   shieldWrap: { alignItems: "center" },
   shieldCircle: {
     width: 80,
