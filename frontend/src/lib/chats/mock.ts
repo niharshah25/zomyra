@@ -24,6 +24,8 @@ export type Conversation = {
   name: string;
   avatar: string;
   verified: boolean;
+  /** Whether this contact is a Zomyra Premium subscriber. */
+  premium?: boolean;
   lastMessage: string;
   time: string;
   unread: number;
@@ -38,6 +40,7 @@ const BASE: Conversation[] = [
     avatar:
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80&auto=format&fit=crop",
     verified: true,
+    premium: true,
     lastMessage: "Hope your week is going well",
     time: "8:45 PM",
     unread: 2,
@@ -79,6 +82,7 @@ const BASE: Conversation[] = [
     avatar:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80&auto=format&fit=crop",
     verified: true,
+    premium: true,
     lastMessage: "Coffee this weekend?",
     time: "6:12 PM",
     unread: 0,
@@ -156,6 +160,7 @@ const BASE: Conversation[] = [
     avatar:
       "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&q=80&auto=format&fit=crop",
     verified: true,
+    premium: true,
     lastMessage: "Haha noted",
     time: "Tue",
     unread: 1,

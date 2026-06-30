@@ -1,7 +1,7 @@
 /**
  * Chats list. Tap an item to open a conversation.
  */
-import { Search } from "lucide-react-native";
+import { Crown, Search } from "lucide-react-native";
 import { useState } from "react";
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -56,9 +56,16 @@ export default function ChatsList() {
               <Image source={{ uri: item.avatar }} style={styles.avatar} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <View style={styles.rowTop}>
-                  <Text style={styles.name} numberOfLines={1}>
-                    {item.name}
-                  </Text>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    {item.premium ? (
+                      <View testID={`chat-premium-${item.id}`} style={styles.premiumDot}>
+                        <Crown size={9} color="#FFF" strokeWidth={2.4} fill="#FFF" />
+                      </View>
+                    ) : null}
+                  </View>
                   <Text
                     style={[
                       styles.time,
@@ -140,7 +147,16 @@ const styles = StyleSheet.create({
   },
   avatar: { width: 48, height: 48, borderRadius: 999, backgroundColor: colors.secondary },
   rowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  name: { fontSize: 14.5, fontWeight: "700", color: colors.foreground, flex: 1, marginRight: 6 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1, marginRight: 6 },
+  name: { fontSize: 14.5, fontWeight: "700", color: colors.foreground, flexShrink: 1 },
+  premiumDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   time: { fontSize: 11, color: colors.mutedForeground },
   rowBottom: { marginTop: 2, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   preview: { flex: 1, fontSize: 13, color: colors.mutedForeground, marginRight: 6 },

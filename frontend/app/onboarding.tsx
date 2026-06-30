@@ -322,6 +322,34 @@ const Q1: QuestionScreen[] = [
   {
     kind: "q", section: 1, autoAdvance: true,
     render: (s, set) => ({
+      title: "What's your religion?",
+      subtitle: "This helps us find matches who share your values.",
+      canNext: !!s.religion,
+      hideNext: !!s.religion,
+      body: (
+        <OptionGrid
+          options={[
+            "Hindu",
+            "Muslim",
+            "Christian",
+            "Sikh",
+            "Jain",
+            "Buddhist",
+            "Spiritual but not Religious",
+            "Agnostic",
+            "Atheist",
+            "Prefer Not To Say",
+          ] as const}
+          value={s.religion}
+          onChange={(v) => set("religion", v)}
+          compact
+        />
+      ),
+    }),
+  },
+  {
+    kind: "q", section: 1, autoAdvance: true,
+    render: (s, set) => ({
       title: "Your world",
       subtitle: "How does your family live?",
       canNext: !!s.familyStructure,

@@ -2,7 +2,7 @@
  * Requests — premium/free upsell, list of incoming connection requests.
  * Tapping a card opens the profile sheet with Accept/Decline.
  */
-import { Check, Lock, Sparkles, UserPlus, X } from "lucide-react-native";
+import { Check, Crown, Lock, Sparkles, UserPlus, X } from "lucide-react-native";
 import { useState } from "react";
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -217,9 +217,16 @@ function PremiumCard({ request, onOpen }: { request: ConnectionRequest; onOpen: 
       <Image source={{ uri: p.hero }} style={styles.cardAvatar} />
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <Text style={styles.cardName} numberOfLines={1}>
-            {p.name}, {p.age}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.cardName} numberOfLines={1}>
+              {p.name}, {p.age}
+            </Text>
+            {p.premium ? (
+              <View testID={`request-premium-${request.id}`} style={styles.premiumDot}>
+                <Crown size={9} color="#FFF" strokeWidth={2.4} fill="#FFF" />
+              </View>
+            ) : null}
+          </View>
           <Text style={styles.cardTime}>{request.receivedAt}</Text>
         </View>
         <Text style={styles.cardLoc}>{p.location}</Text>
@@ -328,7 +335,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   cardAvatar: { width: 64, height: 64, borderRadius: 12 },
-  cardName: { fontSize: 14, fontWeight: "700", color: colors.foreground, flex: 1, marginRight: 6 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1, marginRight: 6 },
+  cardName: { fontSize: 14, fontWeight: "700", color: colors.foreground, flexShrink: 1 },
+  premiumDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cardLoc: { marginTop: 2, fontSize: 12, color: colors.mutedForeground },
   cardTime: { fontSize: 10.5, color: colors.mutedForeground },
   cardTeaser: { marginTop: 6, fontSize: 12, color: "rgba(31,18,53,0.85)", lineHeight: 17 },

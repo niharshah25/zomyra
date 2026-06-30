@@ -12,20 +12,16 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  Check,
   CheckCircle2,
   ChevronRight,
   Crown,
   Eye,
   Headphones,
-  Image as ImageIcon,
   LogOut,
   MapPin,
   Pencil,
-  Phone,
   ShieldAlert,
   Sparkles,
-  Star,
   Trash2,
   X,
   type LucideIcon,
@@ -49,6 +45,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { FloatingNav } from "@/src/components/nav/FloatingNav";
 import { useOnboardingStore } from "@/src/stores/onboarding-store";
+import { useRequestsStore } from "@/src/stores/requests-store";
 
 const PURPLE = "#5B2C6F";
 const PURPLE_DEEP = "#3D1A4A";
@@ -68,6 +65,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const onboarding = useOnboardingStore((s) => s.state);
   const reset = useOnboardingStore((s) => s.reset);
+  const isPremium = useRequestsStore((s) => s.premium);
 
   const fullName = useMemo(() => {
     const first = (onboarding.firstName || "Riya").trim();
@@ -100,21 +98,8 @@ export default function ProfileScreen() {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.kicker}>ZOMYRA</Text>
-            <Text style={styles.title}>Your profile</Text>
-          </View>
-          <Pressable
-            testID="profile-settings"
-            onPress={() => router.push("/filters" as never)}
-            style={({ pressed }) => [
-              styles.settingsBtn,
-              pressed && { opacity: 0.85 },
-            ]}
-            hitSlop={8}
-          >
-            <SettingsCog size={20} color={PURPLE} />
-          </Pressable>
+          <Text style={styles.kicker}>ZOMYRA</Text>
+          <Text style={styles.title}>Your profile</Text>
         </View>
 
         {/* ── Summary ── */}
@@ -122,24 +107,19 @@ export default function ProfileScreen() {
           <View style={styles.avatarRing}>
             <Image source={{ uri: DEFAULT_AVATAR }} style={styles.avatar} />
           </View>
-          <Text style={styles.name} numberOfLines={1}>
-            {fullName}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name} numberOfLines={1}>
+              {fullName}
+            </Text>
+            {isPremium ? (
+              <View testID="profile-premium-badge" style={styles.premiumDot}>
+                <Crown size={11} color="#FFF" strokeWidth={2.4} fill="#FFF" />
+              </View>
+            ) : null}
+          </View>
           <View style={styles.locRow}>
             <MapPin size={14} color={MUTED} strokeWidth={2} />
             <Text style={styles.locText}>{city}</Text>
-          </View>
-          <View style={styles.strengthBadge} testID="profile-strength">
-            <Star size={13} color={PURPLE} strokeWidth={2} />
-            <Text style={styles.strengthLabel}>Profile strength: </Text>
-            <Text style={styles.strengthValue}>Great</Text>
-          </View>
-
-          {/* Verification chips */}
-          <View style={styles.verifyRow}>
-            <VerifyChip Icon={ImageIcon} label="Photo verified" verified />
-            <VerifyChip Icon={Phone} label="Mobile verified" verified />
-            <VerifyChip Icon={CheckCircle2} label="92% complete" />
           </View>
         </View>
 
@@ -155,17 +135,21 @@ export default function ProfileScreen() {
             onPress={() => router.push("/edit-profile" as never)}
           />
           <Divider />
-          <ActionRow
-            testID="profile-action-premium"
-            Icon={Crown}
-            iconBg={LIGHT_PURPLE}
-            iconColor={PURPLE}
-            title="Zomyra Premium"
-            subtitle="Unlock advanced features"
-            rightBadgeText="Best value"
-            onPress={() => router.push("/premium" as never)}
-          />
-          <Divider />
+          {!isPremium ? (
+            <>
+              <ActionRow
+                testID="profile-action-premium"
+                Icon={Crown}
+                iconBg={LIGHT_PURPLE}
+                iconColor={PURPLE}
+                title="Zomyra Premium"
+                subtitle="Unlock advanced features"
+                rightBadgeText="Best value"
+                onPress={() => router.push("/premium" as never)}
+              />
+              <Divider />
+            </>
+          ) : null}
           <ActionRow
             testID="profile-action-logout"
             Icon={LogOut}
@@ -188,7 +172,8 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* ── Premium upgrade card ── */}
+        {/* ── Premium upgrade card (hidden when user already has Premium) ── */}
+        {!isPremium ? (
         <View style={styles.premiumCard}>
           <LinearGradient
             colors={[PURPLE, PURPLE_DEEP]}
@@ -248,6 +233,7 @@ export default function ProfileScreen() {
             </LinearGradient>
           </Pressable>
         </View>
+        ) : null}
       </ScrollView>
 
       <FloatingNav />
@@ -267,38 +253,6 @@ export default function ProfileScreen() {
 }
 
 // ───────────────────────── helpers ─────────────────────────
-
-function SettingsCog({ size = 20, color = PURPLE }: { size?: number; color?: string }) {
-  // Lucide doesn't ship a 'Settings' icon via the slim default; use a simple svg-free composition
-  // via the Cog from lucide.
-  // We avoid importing more icons by using a CSS-like circle with gear notches → simpler: use Sparkles? No.
-  // Just rely on the standard `Cog` icon from lucide-react-native, which exists.
-  const Cog = require("lucide-react-native").Cog as LucideIcon;
-  return <Cog size={size} color={color} strokeWidth={2} />;
-}
-
-function VerifyChip({
-  Icon,
-  label,
-  verified,
-}: {
-  Icon: LucideIcon;
-  label: string;
-  verified?: boolean;
-}) {
-  return (
-    <View style={[styles.verifyChip, verified && styles.verifyChipActive]}>
-      <Icon size={12} color={verified ? PURPLE : MUTED} strokeWidth={2} />
-      <Text
-        style={[styles.verifyChipText, verified && styles.verifyChipTextActive]}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-      {verified ? <Check size={11} color={PURPLE} strokeWidth={3} /> : null}
-    </View>
-  );
-}
 
 function ActionRow({
   Icon,
@@ -675,8 +629,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 4,
-    flexDirection: "row",
-    alignItems: "center",
   },
   kicker: {
     fontSize: 12,
@@ -691,27 +643,17 @@ const styles = StyleSheet.create({
     color: TEXT,
     letterSpacing: -0.5,
   },
-  settingsBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    backgroundColor: LIGHT_PURPLE,
-    borderWidth: 1,
-    borderColor: BORDER,
-    alignItems: "center",
-    justifyContent: "center",
-  },
 
-  // summary
+  // summary — compact
   summary: {
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   avatarRing: {
-    width: 96,
-    height: 96,
+    width: 80,
+    height: 80,
     borderRadius: 999,
     padding: 3,
     backgroundColor: LIGHT_PURPLE,
@@ -719,59 +661,33 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
   },
   avatar: { width: "100%", height: "100%", borderRadius: 999 },
+  nameRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   name: {
-    marginTop: 12,
     fontSize: 22,
     fontWeight: "800",
     color: TEXT,
     letterSpacing: -0.4,
   },
-  locRow: { marginTop: 4, flexDirection: "row", alignItems: "center", gap: 4 },
-  locText: { fontSize: 13, color: MUTED, fontWeight: "500" },
-  strengthBadge: {
-    marginTop: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  premiumDot: {
+    width: 22,
+    height: 22,
     borderRadius: 999,
-    backgroundColor: LIGHT_PURPLE,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  strengthLabel: { fontSize: 12.5, fontWeight: "600", color: TEXT, marginLeft: 6 },
-  strengthValue: { fontSize: 12.5, fontWeight: "800", color: PURPLE },
-
-  verifyRow: {
-    marginTop: 12,
-    flexDirection: "row",
-    flexWrap: "wrap",
+    backgroundColor: PURPLE,
+    alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    paddingHorizontal: 8,
+    shadowColor: PURPLE,
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  verifyChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: "#FFF",
-  },
-  verifyChipActive: {
-    backgroundColor: LIGHT_PURPLE,
-    borderColor: BORDER,
-  },
-  verifyChipText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: MUTED,
-    letterSpacing: -0.1,
-  },
-  verifyChipTextActive: { color: PURPLE, fontWeight: "700" },
+  locRow: { marginTop: 2, flexDirection: "row", alignItems: "center", gap: 4 },
+  locText: { fontSize: 13, color: MUTED, fontWeight: "500" },
 
   // action card
   actionCard: {

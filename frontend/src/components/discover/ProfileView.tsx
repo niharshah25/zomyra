@@ -10,6 +10,7 @@ import {
   Briefcase,
   Cigarette,
   CigaretteOff,
+  Crown,
   Dumbbell,
   Heart,
   HeartHandshake,
@@ -115,11 +116,14 @@ function findFact(profile: DiscoverProfile, label: string): string | undefined {
 type Props = {
   profile: DiscoverProfile;
   dimension?: CompatibilityDimension;
+  /** Optional: kept for compat with existing callers (Requests sheet); Discover now renders its own floating action bar. */
   onPass?: () => void;
   onConnect?: () => void;
+  /** Optional custom footer (used by Requests bottom-sheet for Accept/Decline). */
+  footer?: ReactNode;
 };
 
-export function ProfileView({ profile, dimension = "all", onPass, onConnect }: Props) {
+export function ProfileView({ profile, dimension = "all", footer }: Props) {
   const [viewerPhoto, setViewerPhoto] = useState<string | null>(null);
   const [showReason, setShowReason] = useState(false);
 
@@ -162,9 +166,17 @@ export function ProfileView({ profile, dimension = "all", onPass, onConnect }: P
       {/* ── Identity header ── */}
       <View style={styles.identityRow}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.identityName} numberOfLines={1}>
-            {profile.name}, {profile.age}
-          </Text>
+          <View style={styles.identityNameRow}>
+            <Text style={styles.identityName} numberOfLines={1}>
+              {profile.name}, {profile.age}
+            </Text>
+            {profile.premium ? (
+              <View testID="discover-premium-badge" style={styles.premiumBadge}>
+                <Crown size={11} color="#FFF" strokeWidth={2.4} fill="#FFF" />
+                <Text style={styles.premiumBadgeText}>Premium</Text>
+              </View>
+            ) : null}
+          </View>
           <View style={styles.identityLocRow}>
             <MapPin size={14} color={MUTED} strokeWidth={2} />
             <Text style={styles.identityLoc} numberOfLines={1}>
@@ -188,8 +200,6 @@ export function ProfileView({ profile, dimension = "all", onPass, onConnect }: P
         uri={photos[0]}
         testID="discover-photo-0"
         onOpen={() => setViewerPhoto(photos[0])}
-        onPass={onPass}
-        onConnect={onConnect}
       />
 
       <InfoCard kicker="ABOUT ME" Icon={UserRound} testID="discover-about">
@@ -202,8 +212,6 @@ export function ProfileView({ profile, dimension = "all", onPass, onConnect }: P
         uri={photos[1]}
         testID="discover-photo-1"
         onOpen={() => setViewerPhoto(photos[1])}
-        onPass={onPass}
-        onConnect={onConnect}
       />
 
       <InfoCard kicker="LIFESTYLE" Icon={Leaf} testID="discover-lifestyle">
@@ -228,9 +236,6 @@ export function ProfileView({ profile, dimension = "all", onPass, onConnect }: P
         uri={photos[2]}
         testID="discover-photo-2"
         onOpen={() => setViewerPhoto(photos[2])}
-        onPass={onPass}
-        onConnect={onConnect}
-        highlightLike
       />
 
       {alignedItems.length > 0 ? (
@@ -352,6 +357,7 @@ export function ProfileView({ profile, dimension = "all", onPass, onConnect }: P
           </TouchableOpacity>
         </View>
       </Modal>
+      {footer ? <View style={styles.footerSlot}>{footer}</View> : null}
     </View>
   );
 }
@@ -369,16 +375,10 @@ function Prompt({ text }: { text: string }) {
 function PhotoCard({
   uri,
   onOpen,
-  onPass,
-  onConnect,
-  highlightLike,
   testID,
 }: {
   uri: string;
   onOpen?: () => void;
-  onPass?: () => void;
-  onConnect?: () => void;
-  highlightLike?: boolean;
   testID?: string;
 }) {
   return (
@@ -391,34 +391,6 @@ function PhotoCard({
       >
         <Image source={{ uri }} style={styles.photoImg} />
       </TouchableOpacity>
-      <Pressable
-        testID={`${testID}-pass`}
-        onPress={onPass}
-        style={({ pressed }) => [
-          styles.photoActionLeft,
-          pressed && { transform: [{ scale: 0.94 }] },
-        ]}
-        hitSlop={6}
-      >
-        <X size={22} color={TEXT} strokeWidth={2} />
-      </Pressable>
-      <Pressable
-        testID={`${testID}-like`}
-        onPress={onConnect}
-        style={({ pressed }) => [
-          styles.photoActionRight,
-          highlightLike && styles.photoActionRightHi,
-          pressed && { transform: [{ scale: 0.94 }] },
-        ]}
-        hitSlop={6}
-      >
-        <Heart
-          size={22}
-          color={PURPLE}
-          fill={highlightLike ? PURPLE : "transparent"}
-          strokeWidth={2}
-        />
-      </Pressable>
     </View>
   );
 }
@@ -434,26 +406,11 @@ function InfoCard({
   children: ReactNode;
   testID?: string;
 }) {
-  const [liked, setLiked] = useState(false);
   return (
     <View style={styles.infoCard} testID={testID}>
       <View style={styles.infoHeaderRow}>
         <Icon size={14} color={PURPLE} strokeWidth={2} />
         <Text style={styles.kicker}>{kicker}</Text>
-        <View style={{ flex: 1 }} />
-        <Pressable
-          onPress={() => setLiked((v) => !v)}
-          hitSlop={10}
-          testID={`${testID}-like`}
-          style={({ pressed }) => [pressed && { opacity: 0.7 }]}
-        >
-          <Heart
-            size={18}
-            color={PURPLE}
-            fill={liked ? PURPLE : "transparent"}
-            strokeWidth={2}
-          />
-        </Pressable>
       </View>
       <View style={{ marginTop: 8 }}>{children}</View>
     </View>
@@ -533,6 +490,34 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: TEXT,
     letterSpacing: -0.5,
+    flexShrink: 1,
+  },
+  identityNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  premiumBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: PURPLE,
+    shadowColor: PURPLE,
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  premiumBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#FFF",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
   },
   identityLocRow: {
     flexDirection: "row",
@@ -578,39 +563,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   photoImg: { width: "100%", height: "100%" },
-  photoActionLeft: {
-    position: "absolute",
-    left: PAD_X + 16,
-    bottom: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 999,
-    backgroundColor: "#FFF",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  photoActionRight: {
-    position: "absolute",
-    right: PAD_X + 16,
-    bottom: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 999,
-    backgroundColor: "#FFF",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  photoActionRightHi: { borderWidth: 2, borderColor: PURPLE },
+  footerSlot: { paddingHorizontal: PAD_X, paddingTop: 16 },
 
   // Info card
   infoCard: {

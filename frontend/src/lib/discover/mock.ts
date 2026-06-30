@@ -22,6 +22,8 @@ export type DiscoverProfile = {
   income?: string;
   build?: string;
   religion?: string;
+  /** Whether this user is a Zomyra Premium subscriber. Surfaces a small crown badge next to the name. */
+  premium?: boolean;
   compatibility: CompatibilityTier;
   matchReason: string;
   scores: Record<CompatibilityDimension, DimensionScore>;
@@ -44,6 +46,7 @@ export const MOCK_PROFILES: DiscoverProfile[] = [
     income: "₹20-30 LPA",
     build: "Athletic",
     religion: "Hindu",
+    premium: true,
     compatibility: "Excellent Match",
     matchReason:
       "You both value personal growth while keeping family close. Your views on finances, parenting, and long-term goals are highly aligned — and while your social lifestyles differ slightly, your communication styles look beautifully complementary.",
@@ -107,6 +110,7 @@ export const MOCK_PROFILES: DiscoverProfile[] = [
     income: "₹40-50 LPA",
     build: "Athletic",
     religion: "Hindu",
+    premium: true,
     compatibility: "Great Match",
     matchReason:
       "You share a deep alignment on ambition, financial responsibility, and how you want to raise a family. You both describe yourselves as introverted but socially warm — a rare and complementary pairing.",

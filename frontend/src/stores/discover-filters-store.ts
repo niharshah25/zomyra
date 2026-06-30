@@ -1,32 +1,91 @@
 /**
- * Discover filter state — only stores user selections.
- * Filtering / ranking still happens in Discover (compatibility dimension).
+ * Discover filter state — supports age (range), multi-select for chip
+ * filters, and premium filters (only persisted when the user has Premium
+ * unlocked, but stored centrally so toggling Premium reveals them).
  */
 import { create } from "zustand";
 
-export type FilterKey = "age" | "religion" | "diet" | "location";
+export type MultiFilterKey =
+  | "religion"
+  | "diet"
+  | "location"
+  | "smoking"
+  | "build"
+  | "education"
+  | "profession"
+  | "income"
+  | "family"
+  | "children"
+  | "language"
+  | "drinking";
+
+export type FilterKey = "age" | "height" | MultiFilterKey;
+
+export type AgeRange = [number, number];
+export type HeightRange = [number, number];
 
 type FilterState = {
-  age: string | null;        // e.g. "26 – 30"
-  religion: string | null;   // e.g. "Hindu"
-  diet: string | null;       // e.g. "Vegetarian"
-  location: string | null;   // e.g. "Bangalore"
-  set: (key: FilterKey, value: string | null) => void;
+  age: AgeRange;
+  height: HeightRange;
+  religion: string[];
+  diet: string[];
+  location: string[];
+  smoking: string[];
+  build: string[];
+  education: string[];
+  profession: string[];
+  income: string[];
+  family: string[];
+  children: string[];
+  language: string[];
+  drinking: string[];
+  setAge: (range: AgeRange) => void;
+  setHeight: (range: HeightRange) => void;
+  toggle: (key: MultiFilterKey, value: string) => void;
+  clear: (key: FilterKey) => void;
   reset: () => void;
 };
 
+export const DEFAULT_AGE: AgeRange = [22, 40];
+export const DEFAULT_HEIGHT: HeightRange = [150, 195];
+
+const EMPTY_STATE = {
+  age: DEFAULT_AGE,
+  height: DEFAULT_HEIGHT,
+  religion: [] as string[],
+  diet: [] as string[],
+  location: [] as string[],
+  smoking: [] as string[],
+  build: [] as string[],
+  education: [] as string[],
+  profession: [] as string[],
+  income: [] as string[],
+  family: [] as string[],
+  children: [] as string[],
+  language: [] as string[],
+  drinking: [] as string[],
+};
+
 export const useDiscoverFilters = create<FilterState>((set) => ({
-  age: null,
-  religion: null,
-  diet: null,
-  location: null,
-  set: (key, value) => set({ [key]: value } as Partial<FilterState>),
-  reset: () => set({ age: null, religion: null, diet: null, location: null }),
+  ...EMPTY_STATE,
+  setAge: (range) => set({ age: range }),
+  setHeight: (range) => set({ height: range }),
+  toggle: (key, value) =>
+    set((s) => {
+      const cur = s[key] as string[];
+      const next = cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value];
+      return { [key]: next } as Partial<FilterState>;
+    }),
+  clear: (key) =>
+    set(() => {
+      if (key === "age") return { age: DEFAULT_AGE };
+      if (key === "height") return { height: DEFAULT_HEIGHT };
+      return { [key]: [] } as Partial<FilterState>;
+    }),
+  reset: () => set({ ...EMPTY_STATE }),
 }));
 
-// Option lists used by the bottom sheets and Filters screen.
-export const FILTER_OPTIONS: Record<FilterKey, string[]> = {
-  age: ["22 – 25", "26 – 30", "31 – 35", "36 – 40", "41 +"],
+export const FILTER_OPTIONS: Record<MultiFilterKey, string[]> = {
   religion: ["Hindu", "Muslim", "Christian", "Sikh", "Jain", "Buddhist", "Parsi", "Other"],
   diet: ["Vegetarian", "Eggetarian", "Non-Vegetarian", "Vegan", "Jain"],
   location: [
@@ -39,11 +98,34 @@ export const FILTER_OPTIONS: Record<FilterKey, string[]> = {
     "Kolkata",
     "Ahmedabad",
   ],
-};
-
-export const FILTER_LABEL: Record<FilterKey, string> = {
-  age: "Age",
-  religion: "Religion",
-  diet: "Diet",
-  location: "Location",
+  smoking: ["Non-smoker", "Occasional", "Regular", "Doesn't matter"],
+  build: ["Slim", "Average", "Athletic", "Curvy", "Plus Size"],
+  education: ["High School", "Diploma", "Bachelor's", "Master's", "MBA", "PhD"],
+  profession: [
+    "Engineer",
+    "Doctor",
+    "Designer",
+    "Founder",
+    "Educator",
+    "Consultant",
+    "Finance",
+    "Creative",
+    "Other",
+  ],
+  income: ["Below ₹5 LPA", "₹5–10 LPA", "₹10–20 LPA", "₹20–35 LPA", "₹35–50 LPA", "₹50L+"],
+  family: ["Nuclear", "Joint", "Flexible"],
+  children: ["Wants children", "Does not want", "Open / undecided"],
+  language: [
+    "English",
+    "Hindi",
+    "Tamil",
+    "Telugu",
+    "Kannada",
+    "Marathi",
+    "Bengali",
+    "Punjabi",
+    "Gujarati",
+    "Malayalam",
+  ],
+  drinking: ["Non-Drinker", "Social Drinker", "Occasional", "Regular"],
 };

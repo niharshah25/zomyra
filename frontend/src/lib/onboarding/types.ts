@@ -22,6 +22,17 @@ export type Smoking = "Never" | "Occasionally" | "Frequently";
 export type Fitness = "Not Important" | "Moderately Active" | "Active" | "Fitness Enthusiast";
 export type FamilyStructure = "Nuclear Family" | "Joint Family" | "Flexible";
 export type Relocation = "Open to Relocation" | "Depends on Opportunity" | "Prefer Not To Relocate";
+export type Religion =
+  | "Hindu"
+  | "Muslim"
+  | "Christian"
+  | "Sikh"
+  | "Jain"
+  | "Buddhist"
+  | "Spiritual but not Religious"
+  | "Agnostic"
+  | "Atheist"
+  | "Prefer Not To Say";
 
 export type OnboardingState = {
   firstName: string;
@@ -40,6 +51,7 @@ export type OnboardingState = {
   fitness: Fitness | "";
   languages: string[];
   familyStructure: FamilyStructure | "";
+  religion: Religion | "";
   relocation: Relocation | "";
   prefGender: Gender | "";
   prefAge: [number, number];
@@ -97,6 +109,7 @@ export const defaultOnboardingState: OnboardingState = {
   fitness: "",
   languages: [],
   familyStructure: "",
+  religion: "",
   relocation: "",
   prefGender: "",
   prefAge: [25, 32],

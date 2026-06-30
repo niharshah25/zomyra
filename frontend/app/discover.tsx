@@ -7,7 +7,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { ChevronDown, Crown, SlidersHorizontal, Sparkles } from "lucide-react-native";
+import { ChevronDown, Crown, Heart, SlidersHorizontal, Sparkles, Star, X } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -105,7 +105,7 @@ export default function Discover() {
 
   return (
     <SafeAreaView style={styles.root} edges={["top", "left", "right"]}>
-      {/* Header — [All matches ▼] [Zomyra] [Filters] */}
+      {/* Header — [All matches ▼]   ZOMYRA   [Filter cog] */}
       <View style={styles.header}>
         <Pressable
           testID="filter-chip-compatibility"
@@ -130,13 +130,12 @@ export default function Discover() {
           testID="filter-icon"
           onPress={() => router.push("/filters" as never)}
           style={({ pressed }) => [
-            styles.headerPill,
-            styles.headerPillRight,
+            styles.settingsBtn,
             pressed && { opacity: 0.85 },
           ]}
+          hitSlop={8}
         >
-          <SlidersHorizontal size={16} color={PURPLE} strokeWidth={2} />
-          <Text style={styles.headerPillText}>Filters</Text>
+          <SlidersHorizontal size={20} color={PURPLE} strokeWidth={2} />
         </Pressable>
       </View>
 
@@ -183,9 +182,47 @@ export default function Discover() {
             <ProfileView
               profile={profile}
               dimension={dimension}
-              onPass={advance}
-              onConnect={advance}
             />
+
+            {/* Action row at the bottom of the profile — scrolls in with content */}
+            <View testID="discover-action-bar" style={styles.actionBar}>
+              <Pressable
+                testID="discover-action-dislike"
+                onPress={advance}
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  styles.actionBtnGhost,
+                  pressed && { transform: [{ scale: 0.94 }] },
+                ]}
+                hitSlop={6}
+              >
+                <X size={26} color={TEXT} strokeWidth={2.4} />
+              </Pressable>
+              <Pressable
+                testID="discover-action-superlike"
+                onPress={advance}
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  styles.actionBtnSuperlike,
+                  pressed && { transform: [{ scale: 0.94 }] },
+                ]}
+                hitSlop={6}
+              >
+                <Star size={26} color="#1D4ED8" strokeWidth={2.4} fill="#1D4ED8" />
+              </Pressable>
+              <Pressable
+                testID="discover-action-like"
+                onPress={advance}
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  styles.actionBtnLike,
+                  pressed && { transform: [{ scale: 0.94 }] },
+                ]}
+                hitSlop={6}
+              >
+                <Heart size={26} color="#FFFFFF" strokeWidth={2.4} fill="#FFFFFF" />
+              </Pressable>
+            </View>
           </Animated.View>
         ) : (
           <Text style={styles.empty}>Loading…</Text>
@@ -351,7 +388,7 @@ const styles = StyleSheet.create({
   // header
   header: {
     paddingHorizontal: 12,
-    paddingTop: 8,
+    paddingTop: 10,
     paddingBottom: 8,
     flexDirection: "row",
     alignItems: "center",
@@ -367,23 +404,50 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  kicker: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 2,
+    color: PURPLE,
+  },
+  titleH1: {
+    marginTop: 2,
+    fontSize: 26,
+    fontWeight: "800",
+    color: TEXT,
+    letterSpacing: -0.5,
+  },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: LIGHT_PURPLE,
+    borderWidth: 1,
+    borderColor: BORDER,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  subHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    flexDirection: "row",
+    alignItems: "center",
+  },
   headerPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: BORDER,
     backgroundColor: "#FFF",
-    maxWidth: 160,
-  },
-  headerPillRight: {
-    backgroundColor: LIGHT_PURPLE,
+    maxWidth: 150,
   },
   headerPillText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: "700",
     color: PURPLE,
     letterSpacing: -0.1,
@@ -482,4 +546,50 @@ const styles = StyleSheet.create({
   bannerHi: { color: PURPLE, fontWeight: "700" },
 
   empty: { padding: 32, textAlign: "center", color: MUTED },
+
+  // inline action bar at the bottom of the profile
+  actionBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 18,
+    marginTop: 24,
+    marginHorizontal: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  actionBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionBtnGhost: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: BORDER,
+  },
+  actionBtnSuperlike: {
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1.5,
+    borderColor: "#BFDBFE",
+  },
+  actionBtnLike: {
+    backgroundColor: PURPLE,
+    shadowColor: PURPLE,
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
 });
