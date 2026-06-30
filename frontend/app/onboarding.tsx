@@ -365,28 +365,6 @@ const Q1: QuestionScreen[] = [
       ),
     }),
   },
-  {
-    kind: "q", section: 1,
-    render: (s, set) => ({
-      title: "About me",
-      subtitle: "A few lines that capture who you are. This shows on your profile.",
-      canNext: true,
-      body: (
-        <View style={{ width: "100%" }}>
-          <TextInput
-            testID="onb-bio-input"
-            value={s.bio}
-            onChangeText={(t) => set("bio", t.slice(0, 400))}
-            placeholder="What you love, what you're looking for, who you are…"
-            placeholderTextColor={colors.mutedForeground}
-            multiline
-            style={styles.bioInput}
-          />
-          <Text style={styles.bioCount}>{s.bio.length}/400</Text>
-        </View>
-      ),
-    }),
-  },
 ];
 
 const Q2: QuestionScreen[] = [
