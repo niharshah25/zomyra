@@ -338,10 +338,7 @@ export function MatchOverlay({
 
           {/* Title */}
           <Animated.View style={titleStyle}>
-            <View style={styles.titleRow}>
-              <Text style={styles.titleEmoji}>💜</Text>
-              <Text style={styles.title}>It's mutual!</Text>
-            </View>
+            <Text style={styles.title}>It's mutual!</Text>
             <Text style={styles.subtitle}>
               You and {matchedUserName} have expressed{'\n'}interest in each other.
             </Text>
@@ -447,27 +444,13 @@ const styles = StyleSheet.create({
     left: 0,
     top: 5,
   },
-  ringRight: {
-    right: 0,
-    top: 5,
-  },
-  // Title
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  titleEmoji: {
-    fontSize: 28,
-  },
   title: {
     fontSize: 36,
     fontWeight: "700",
     color: "#fff",
     textAlign: "center",
     letterSpacing: -0.5,
+    marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
@@ -498,14 +481,7 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
   photoRing: {
-    position: "absolute",
-    top: -4,
-    left: -4,
-    right: -4,
-    bottom: -4,
-    borderRadius: 64,
-    borderWidth: 2,
-    borderColor: PURPLE,
+    display: "none",
   },
   // Profile Info
   profileInfo: {
