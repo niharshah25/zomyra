@@ -142,7 +142,15 @@ export function CompatibilitySheet({ visible, selected, onClose, onApply }: Prop
         </Animated.View>
 
         <Animated.View
-          style={[styles.sheet, { transform: [{ translateY }], paddingTop: Math.max(insets.top + 20, 32) }]}
+          style={[
+            styles.sheet,
+            {
+              transform: [{ translateY }],
+              paddingTop: Math.max(insets.top + 20, 32),
+              maxHeight: SCREEN_H * 0.85, // Don't let sheet go above 85% of screen
+              marginTop: Math.max(insets.top + 20, 60), // Force sheet to start lower
+            },
+          ]}
           testID="compat-sheet"
         >
           <View style={styles.grabber} />

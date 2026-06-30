@@ -24,7 +24,6 @@ import Animated, {
   Easing,
   runOnJS,
 } from "react-native-reanimated";
-import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 
 const SCREEN = Dimensions.get("window");
@@ -305,7 +304,8 @@ export function MatchOverlay({
   return (
     <Modal visible={visible} transparent animationType="none">
       <Animated.View style={[styles.overlay, overlayStyle]}>
-        <BlurView intensity={80} style={StyleSheet.absoluteFill} />
+        {/* Semi-transparent dark overlay - shows content behind */}
+        <View style={StyleSheet.absoluteFill} />
         
         <View style={styles.content}>
           {/* Floating Hearts */}
@@ -343,7 +343,10 @@ export function MatchOverlay({
 
           {/* Title */}
           <Animated.View style={titleStyle}>
-            <Text style={styles.title}>It's mutual!</Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.titleEmoji}>💜</Text>
+              <Text style={styles.title}>It's mutual!</Text>
+            </View>
             <Text style={styles.subtitle}>
               You and {matchedUserName} have expressed{'\n'}interest in each other.
             </Text>
@@ -415,7 +418,7 @@ export function MatchOverlay({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(17, 24, 39, 0.92)",
+    backgroundColor: "rgba(30, 35, 48, 0.88)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -450,12 +453,21 @@ const styles = StyleSheet.create({
     top: 5,
   },
   // Title
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  titleEmoji: {
+    fontSize: 28,
+  },
   title: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "700",
     color: "#fff",
     textAlign: "center",
-    marginBottom: 12,
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -548,35 +560,35 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
     backgroundColor: PURPLE,
-    paddingVertical: 18,
+    paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 16,
+    borderRadius: 12,
     shadowColor: PURPLE,
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   primaryButtonText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
     color: "#fff",
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   secondaryButton: {
-    paddingVertical: 18,
+    paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.35)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   secondaryButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   // Floating elements
   heart: {
