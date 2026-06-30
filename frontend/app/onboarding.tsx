@@ -544,6 +544,10 @@ export default function OnboardingScreen() {
 
   const r = screen.render(state, screen.autoAdvance ? autoSet : set);
   const isLast = idx === SCREENS.length - 1;
+  // Auto-advance screens never need a Continue button — selecting an option
+  // already advances the flow ~250ms later. Hide the button outright instead
+  // of leaving it visible-but-disabled.
+  const hideNext = screen.autoAdvance ? true : r.hideNext;
   return (
     <OnboardingShell
       step={sectionStepIdx}
@@ -553,7 +557,7 @@ export default function OnboardingScreen() {
       onBack={handleBack}
       onNext={handleNext}
       canNext={r.canNext}
-      hideNext={r.hideNext}
+      hideNext={hideNext}
       nextLabel={isLast ? "Finish" : "Continue"}
       hideStepLabel
       transitionKey={idx}
