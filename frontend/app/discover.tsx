@@ -203,7 +203,7 @@ export default function Discover() {
       </ScrollView>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 120, paddingTop: 4 }}
+        contentContainerStyle={{ paddingBottom: 120, paddingTop: 12 }}
         showsVerticalScrollIndicator={false}
         testID="discover-scroll"
       >

@@ -142,14 +142,14 @@ export function CompatibilitySheet({ visible, selected, onClose, onApply }: Prop
         </Animated.View>
 
         <Animated.View
-          style={[styles.sheet, { transform: [{ translateY }], paddingTop: Math.max(insets.top, 12) }]}
+          style={[styles.sheet, { transform: [{ translateY }], paddingTop: Math.max(insets.top + 8, 20) }]}
           testID="compat-sheet"
         >
           <View style={styles.grabber} />
           
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) }}
+            contentContainerStyle={{ paddingTop: 4, paddingBottom: Math.max(insets.bottom, 20) }}
           >
             <View style={styles.headerRow}>
               <Text style={styles.title}>Discovery Mode</Text>
